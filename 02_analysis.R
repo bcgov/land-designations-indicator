@@ -19,6 +19,7 @@ library(ggplot2)
 library(ggthemes)
 library(dplyr)
 library(feather)
+library(bcmaps)
 
 dir.create("out", showWarnings = FALSE)
 
@@ -33,6 +34,8 @@ ld_x_ecoreg <- raster::intersect(ecoreg, ld_agg)
 
 ld_x_ecoreg$area <- rgeos::gArea(ld_x_ecoreg, byid = TRUE)
 
+ld_agg$area <- gArea(ld_agg, byid = TRUE)
+
 ld_ecoreg_summary <- ld_x_ecoreg@data %>%
   group_by(CRGNCD, cons_cat) %>%
   summarise(area_des = sum(area, na.rm = TRUE)) %>%
@@ -40,6 +43,12 @@ ld_ecoreg_summary <- ld_x_ecoreg@data %>%
               summarize(ecoreg_area = sum(area, na.rm = TRUE)), by = "CRGNCD") %>%
   mutate(percent_des = area_des / ecoreg_area * 100,
          area_des_ha = area_des * 1e-4) %>%
+  bind_rows(ld_agg@data %>%
+              group_by(cons_cat) %>%
+              summarise(area_des = sum(area, na.rm = TRUE)) %>%
+              mutate(CRGNCD = "BC",
+                     percent_des = area_des / bc_area(units = "m2") * 100,
+                     area_des_ha = area_des * 1e-4)) %>%
   write_feather("out/ld_ecoreg_summary.feather")
 
 # Intersect simplified versions for mapping display
