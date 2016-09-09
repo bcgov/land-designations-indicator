@@ -1,11 +1,11 @@
 # Copyright 2016 Province of British Columbia
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
@@ -19,6 +19,8 @@ library(ggplot2)
 library(ggthemes)
 library(dplyr)
 library(feather)
+
+dir.create("out", showWarnings = FALSE)
 
 ld <- readRDS("tmp/mock_spatial.rds")
 ld_agg <- readRDS("tmp/mock_spatial_agg.rds")
@@ -38,13 +40,13 @@ ld_ecoreg_summary <- ld_x_ecoreg@data %>%
               summarize(ecoreg_area = sum(area, na.rm = TRUE)), by = "CRGNCD") %>%
   mutate(percent_des = area_des / ecoreg_area * 100,
          area_des_ha = area_des * 1e-4) %>%
-  write_feather("ld_ecoreg_summary.feather")
+  write_feather("out/ld_ecoreg_summary.feather")
 
 # Intersect simplified versions for mapping display
 ld_x_ecoreg_simp <- raster::intersect(ld_agg_simp, ecoreg_simp)
 
-gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("gg_ld_ecoreg.feather")
-gg_ecoreg <- gg_fortify(ecoreg_simp) %>% write_feather("gg_ecoreg.feather")
+gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("out/gg_ld_ecoreg.feather")
+gg_ecoreg <- gg_fortify(ecoreg_simp) %>% write_feather("out/gg_ecoreg.feather")
 
 ecoreg_cds <- unique(gg_ecoreg$CRGNCD)
 
