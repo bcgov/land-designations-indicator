@@ -64,7 +64,7 @@ ecoregions_t$area <- gArea(ecoregions_t, byid = TRUE)
 ## Create simplified versions for visualization
 ecoregions_t_simp <- ms_simplify(ecoregions_t, 0.05) %>%
   fix_self_intersect()
-ecoregions_t_simp_leaflet <- ms_simplify(ecoregions_t, 0.01) %>%
+ecoregions_t_simp_leaflet <- ms_simplify(ecoregions_t[,"CRGNCD"], 0.01) %>%
   fix_self_intersect() %>%
   spTransform(CRSobj = CRS("+init=epsg:4326"))
 
@@ -73,5 +73,5 @@ saveRDS(mock_ld_agg, "tmp/mock_spatial_agg.rds")
 saveRDS(mock_ld_agg_simp, "tmp/mock_spatial_agg_simp.rds")
 saveRDS(ecoregions_t, "tmp/ecoregions_t.rds")
 saveRDS(ecoregions_t_simp, "tmp/ecoregions_t_simp.rds")
-saveRDS(ecoregions_t_simp_leaflet[,"CRGNCD"], "out/ecoregions_t_leaflet.rds")
+saveRDS(ecoregions_t_simp_leaflet, "out/ecoregions_t_leaflet.rds")
 
