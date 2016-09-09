@@ -16,6 +16,9 @@ library(rgeos)
 library(bcmaps)
 library(geojsonio)
 library(rmapshaper)
+library(feather)
+
+source("fun.R")
 
 dir.create("tmp", showWarnings = FALSE)
 
@@ -74,4 +77,6 @@ saveRDS(mock_ld_agg_simp, "tmp/mock_spatial_agg_simp.rds")
 saveRDS(ecoregions_t, "tmp/ecoregions_t.rds")
 saveRDS(ecoregions_t_simp, "tmp/ecoregions_t_simp.rds")
 saveRDS(ecoregions_t_simp_leaflet, "out/ecoregions_t_leaflet.rds")
-
+bc_bound %>%
+  gg_fortify() %>%
+  write_feather("out/gg_bc_bound.feather")

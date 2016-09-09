@@ -1,3 +1,3 @@
 file.copy(paste0("out/", c("gg_ecoreg.feather", "gg_ld_ecoreg.feather", "ld_ecoreg_summary.feather",
-                           "ecoregions_t_leaflet.rds")),
+                           "ecoregions_t_leaflet.rds", "gg_bc_bound.feather")),
           "../land-designations-shinyapp/data/", overwrite = TRUE)
