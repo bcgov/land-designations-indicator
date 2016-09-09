@@ -21,9 +21,11 @@ library(dplyr)
 library(feather)
 library(bcmaps)
 
+source("fun.R")
+
 dir.create("out", showWarnings = FALSE)
 
-ld <- readRDS("tmp/mock_spatial.rds")
+# ld <- readRDS("tmp/mock_spatial.rds")
 ld_agg <- readRDS("tmp/mock_spatial_agg.rds")
 ld_agg_simp <- readRDS("tmp/mock_spatial_agg_simp.rds")
 ecoreg <- readRDS("tmp/ecoregions_t.rds")
@@ -64,18 +66,18 @@ lapply(ecoreg_cds, gg_ld_ecoreg, gg_ld_x_ecoreg, gg_ecoreg)
 
 
 ####################################
-ecoregions_list <- lapply(ecoreg$CRGNCD, function(x) {
-  ecoreg[ecoreg$CRGNCD == x,]
-})
-
-names(ecoregions_list) <- ecoreg$CRGNCD
-
-# This takes about 30 minutes
-# ld_ecoreg_clip_list <- lapply(ecoregions_list, function(x) {
-#   rmapshaper::ms_clip(ld_agg, x)
+# ecoregions_list <- lapply(ecoreg$CRGNCD, function(x) {
+#   ecoreg[ecoreg$CRGNCD == x,]
 # })
-
-names(ld_ecoreg_clip_list) <- ecoreg$CRGNCD
-
-lapply(names(ld_ecoreg_clip_list), plot_ecoreg_land_des, ecoregions_list, ld_ecoreg_clip_list)
+#
+# names(ecoregions_list) <- ecoreg$CRGNCD
+#
+# # This takes about 30 minutes
+# # ld_ecoreg_clip_list <- lapply(ecoregions_list, function(x) {
+# #   rmapshaper::ms_clip(ld_agg, x)
+# # })
+#
+# names(ld_ecoreg_clip_list) <- ecoreg$CRGNCD
+#
+# lapply(names(ld_ecoreg_clip_list), plot_ecoreg_land_des, ecoregions_list, ld_ecoreg_clip_list)
 
