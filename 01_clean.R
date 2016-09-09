@@ -1,11 +1,11 @@
 # Copyright 2016 Province of British Columbia
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
@@ -62,7 +62,7 @@ ecoregions_t <- rbind(ecoregions[!ecoregions$CRGNCD %in% c("GPB", m_ecoregions),
 ecoregions_t$area <- gArea(ecoregions_t, byid = TRUE)
 
 ## Create simplified versions for visualization
-ecoregions_t_simp <- ms_simplify(ecoreg, 0.05)
+ecoregions_t_simp <- ms_simplify(ecoregions_t, 0.05)
 
 saveRDS(mock, "tmp/mock_spatial.rds")
 saveRDS(mock_ld_agg, "tmp/mock_spatial_agg.rds")
