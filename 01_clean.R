@@ -72,6 +72,7 @@ ecoregions_t_simp <- ms_simplify(ecoregions_t, 0.05) %>%
 ecoregions_t_simp_leaflet <- ms_simplify(ecoregions_t[,"CRGNCD"], 0.01) %>%
   fix_self_intersect() %>%
   spTransform(CRSobj = CRS("+init=epsg:4326"))
+ecoregions_t_simp_leaflet$CRGNCD <- as.character(ecoregions_t_simp_leaflet$CRGNCD)
 
 ###############################################################################
 ## Biogeoclimatic zones
