@@ -17,6 +17,7 @@ library(bcmaps)
 library(geojsonio)
 library(rmapshaper)
 library(feather)
+library(cleangeo)
 
 source("fun.R")
 
@@ -36,13 +37,13 @@ bc_carts$cons_cat <- sample(c("A", "B", "C", "D"),
 bc_carts <- transform_bc_albers(bc_carts)
 mock <- bc_carts[,"cons_cat"]
 mock_ld_agg <- raster::aggregate(mock, by = "cons_cat")
-mock_ld_agg <- fix_self_intersect(mock_ld_agg)
+mock_ld_agg <- clgeo_Clean(mock_ld_agg)
 
 mock_ld_agg_simp <- geojson_json(mock) %>%
   ms_simplify(keep = 0.05, keep_shapes = TRUE) %>% # explode = TRUE if want to keep all shapes
   ms_dissolve(field = "cons_cat") %>%
   geojson_sp() %>%
-  fix_self_intersect() %>%
+  clgeo_Clean() %>%
   transform_bc_albers()
 
 ################################################################################
@@ -57,7 +58,7 @@ data("ecoregions")
 gpb_terrestrial <- ms_clip(ecoregions[ecoregions$CRGNCD == "GPB",],
                            bc_bound_hres)
 ## Fix it up:
-gpb_terrestrial <- fix_self_intersect(gpb_terrestrial)
+gpb_terrestrial <- clgeo_Clean(gpb_terrestrial)
 
 ## Add terrestrial portion of GPB back to terrestrial ecoregions
 ecoregions_t <- rbind(ecoregions[!ecoregions$CRGNCD %in% c("GPB", m_ecoregions), ],
@@ -68,11 +69,13 @@ ecoregions_t$area <- gArea(ecoregions_t, byid = TRUE)
 
 ## Create simplified versions for visualization
 ecoregions_t_simp <- ms_simplify(ecoregions_t, 0.05) %>%
-  fix_self_intersect()
-ecoregions_t_simp_leaflet <- ms_simplify(ecoregions_t[,"CRGNCD"], 0.01) %>%
-  fix_self_intersect() %>%
+  clgeo_Clean()
+ecoregions_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.01) %>%
+  clgeo_Clean() %>%
   spTransform(CRSobj = CRS("+init=epsg:4326"))
 ecoregions_t_simp_leaflet$CRGNCD <- as.character(ecoregions_t_simp_leaflet$CRGNCD)
+ecoregions_t_simp_leaflet$CRGNNM <- tools::toTitleCase(tolower(as.character(ecoregions_t_simp_leaflet$CRGNNM)))
+ecoregions_t_simp_leaflet$rmapshaperid <- NULL
 
 ###############################################################################
 ## Biogeoclimatic zones
@@ -91,33 +94,40 @@ system("mapshaper data/bec.shp -clip data/bc_bound.geojson -explode -o data/bec_
 
 ## Check for validity of bec polygons
 bec_t <- readOGR("data", "bec_clip", stringsAsFactors = FALSE)
-bec_t <- fix_self_intersect(bec_t)
+bec_t <- clgeo_Clean(bec_t)
+bec_t$area <- gArea(bec_t, byid = TRUE)
+
+bec_zone <- raster::aggregate(bec_t, by = "ZONE")
+bec_zone <- clgeo_Clean(bec_zone)
+bec_zone$area <- gArea(bec_zone, byid = TRUE)
 
 ## Simplify BEC pologyons for use in display
-bec_t$poly_id <- row.names(bec_t)
-unlink("data/bec_t*")
-writeOGR(bec_t, "data", "bec_t", "ESRI Shapefile")
-system("mapshaper data/bec_t.shp -simplify 0.01 keep-shapes -o data/bec_t_simp.shp")
-bec_t_simp <- readOGR("data", "bec_t_simp", stringsAsFactors = FALSE)
+bec_zone_simp <- ms_simplify(bec_zone, keep = 0.005, keep_shapes = TRUE)
+# unlink("data/bec_zone*")
+# writeOGR(bec_zone, "data", "bec_zone", "ESRI Shapefile")
+# system("mapshaper data/bec_zone.shp -simplify 0.01 keep-shapes -o data/bec_zone_simp.shp")
+# bec_zone_simp <- readOGR("data", "bec_zone_simp", stringsAsFactors = FALSE)
 ## Repair orphaned holes
-bec_t_simp <- fix_self_intersect(bec_t_simp)
+bec_zone_simp <- clgeo_Clean(bec_zone_simp)
 
-## Put area back in m2
-bec_t$area <- gArea(bec_t, byid = TRUE)
-bec_t_simp$area <- bec_t$area
-
-## Create a map of bec zones
-bec_zone_simp <- raster::aggregate(bec_t_simp, by = "ZONE")
-bec_zone_simp$area <- gArea(bec_zone_simp, byid = TRUE)
-
-foo <- ms_simplify(bec_zone_simp, 0.05, keep_shapes = TRUE, explode = TRUE)
+bec_zone_leaflet <- ms_simplify(bec_zone_simp, 0.1, explode = TRUE) %>%
+  ms_dissolve(field = "ZONE") %>%
+  clgeo_Clean() %>%
+  spTransform(CRSobj = CRS("+init=epsg:4326"))
+bec_zone_leaflet$ZONE <- as.character(bec_zone_leaflet$ZONE)
+bec_zone_leaflet$rmapshaperid <- NULL
 
 saveRDS(mock, "tmp/mock_spatial.rds")
 saveRDS(mock_ld_agg, "tmp/mock_spatial_agg.rds")
 saveRDS(mock_ld_agg_simp, "tmp/mock_spatial_agg_simp.rds")
+
 saveRDS(ecoregions_t, "tmp/ecoregions_t.rds")
 saveRDS(ecoregions_t_simp, "tmp/ecoregions_t_simp.rds")
 saveRDS(ecoregions_t_simp_leaflet, "out/ecoregions_t_leaflet.rds")
-bc_bound %>%
-  gg_fortify() %>%
-  write_feather("out/gg_bc_bound.feather")
+
+saveRDS(bec_t, "tmp/bec_t.rds")
+saveRDS(bec_zone, "tmp/bec_zone.rds")
+saveRDS(bec_zone_simp, "tmp/bec_zone_simp.rds")
+saveRDS(bec_zone_leaflet, "out/bec_leaflet.rds")
+
+gg_fortify(bc_bound) %>% write_feather("out/gg_bc_bound.feather")
