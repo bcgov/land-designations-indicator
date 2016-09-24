@@ -34,6 +34,7 @@ ld_agg_simp <- readRDS("tmp/mock_spatial_agg_simp.rds")
 ecoreg <- readRDS("tmp/ecoregions_t.rds")
 ecoreg_simp <- readRDS("tmp/ecoregions_t_simp.rds")
 
+bec <- readRDS("tmp/bec_t.rds")
 bec_zone <- readRDS("tmp/bec_zone.rds")
 bec_zone_simp <- readRDS("tmp/bec_zone_simp.rds")
 
@@ -75,7 +76,7 @@ gg_ecoreg <- gg_fortify(ecoreg_simp) %>% write_feather("out/gg_ecoreg.feather")
 # BEC
 
 ## Intersect land designations with BEC and summarize
-ld_x_bec <- raster::intersect(bec_zone, ld_agg) %>%
+ld_x_bec <- raster::intersect(bec, ld_agg) %>%
   clgeo_Clean()
 
 ld_x_bec$area <- rgeos::gArea(ld_x_bec, byid = TRUE)
