@@ -93,18 +93,16 @@ ld_x_bec <- tryCatch(readRDS(ld_x_bec_tempfile),
 ld_x_bec$area <- rgeos::gArea(ld_x_bec, byid = TRUE)
 
 ld_bec_summary <- ld_x_bec@data %>%
-  group_by(ZONE, cons_cat) %>%
+  group_by(MAP_LABEL, cons_cat = factor(cons_cat)) %>%
   summarise(area_des = sum(area, na.rm = TRUE)) %>%
-  left_join(group_by(bec_zone@data, ZONE) %>%
-              summarize(bec_area = sum(area, na.rm = TRUE)), by = "ZONE") %>%
+  right_join(group_by(bec@data, MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SBZNNM,
+                     VARIANT, VRNTNM) %>%
+              summarize(bec_area = sum(area, na.rm = TRUE)), by = "MAP_LABEL") %>%
   mutate(percent_des = area_des / bec_area * 100,
          area_des_ha = area_des * 1e-4) %>%
-  bind_rows(ld_agg@data %>%
-              group_by(cons_cat) %>%
-              summarise(area_des = sum(area, na.rm = TRUE)) %>%
-              mutate(ZONE = "BC",
-                     percent_des = area_des / bc_area(units = "m2") * 100,
-                     area_des_ha = area_des * 1e-4)) %>%
+  complete(nesting(MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SBZNNM,
+                 VARIANT, VRNTNM, bec_area), cons_cat,
+           fill = list(area_des = 0, area_des_ha = 0, percent_des = 0)) %>%
   write_feather("out/ld_bec_summary.feather")
 
 # Intersect simplified versions for mapping display
