@@ -21,7 +21,7 @@ library(ggthemes)
 library(dplyr)
 library(feather)
 library(bcmaps)
-library(cleangeo)
+library(readr)
 
 source("fun.R")
 
@@ -38,13 +38,27 @@ bec <- readRDS("tmp/bec_t.rds")
 bec_zone <- readRDS("tmp/bec_zone.rds")
 bec_zone_simp <- readRDS("tmp/bec_zone_simp.rds")
 
-## Intersect land designations with ecoregions and summarize
-ld_x_ecoreg <- raster::intersect(ecoreg, ld_agg) %>%
-  clgeo_Clean()
+ld_agg$area <- gArea(ld_agg, byid = TRUE)
+
+## BC Summary
+bc_ld_summary <- ld_agg@data %>%
+  group_by(cons_cat) %>%
+  summarise(area_des = sum(area, na.rm = TRUE)) %>%
+  mutate(CRGNCD = "BC",
+         percent_des = area_des / bc_area(units = "m2") * 100,
+         area_des_ha = area_des * 1e-4) %>%
+  write_feather("out/bc_ld_summary.feather")
+
+## Intersect land designations with ecoregions and summarize.
+## Uses readr::write_rds instead of saveRDS because the former returns the value
+ld_x_ecoreg_tempfile <- "tmp/ld_x_ecoreg.rds"
+ld_x_ecoreg <- tryCatch(readRDS(ld_x_ecoreg_tempfile),
+                        error = function(e) {
+                          raster::intersect(ecoreg, ld_agg) %>%
+                            write_rds(ld_x_ecoreg_tempfile)
+                        })
 
 ld_x_ecoreg$area <- rgeos::gArea(ld_x_ecoreg, byid = TRUE)
-
-ld_agg$area <- gArea(ld_agg, byid = TRUE)
 
 ld_ecoreg_summary <- ld_x_ecoreg@data %>%
   group_by(CRGNCD, cons_cat) %>%
@@ -53,17 +67,10 @@ ld_ecoreg_summary <- ld_x_ecoreg@data %>%
               summarize(ecoreg_area = sum(area, na.rm = TRUE)), by = "CRGNCD") %>%
   mutate(percent_des = area_des / ecoreg_area * 100,
          area_des_ha = area_des * 1e-4) %>%
-  bind_rows(ld_agg@data %>%
-              group_by(cons_cat) %>%
-              summarise(area_des = sum(area, na.rm = TRUE)) %>%
-              mutate(CRGNCD = "BC",
-                     percent_des = area_des / bc_area(units = "m2") * 100,
-                     area_des_ha = area_des * 1e-4)) %>%
   write_feather("out/ld_ecoreg_summary.feather")
 
 # Intersect simplified versions for mapping display
-ld_x_ecoreg_simp <- raster::intersect(ld_agg_simp, ecoreg_simp) %>%
-  clgeo_Clean()
+ld_x_ecoreg_simp <- raster::intersect(ld_agg_simp, ecoreg_simp)
 
 gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("out/gg_ld_ecoreg.feather")
 gg_ecoreg <- gg_fortify(ecoreg_simp) %>% write_feather("out/gg_ecoreg.feather")
@@ -76,12 +83,14 @@ gg_ecoreg <- gg_fortify(ecoreg_simp) %>% write_feather("out/gg_ecoreg.feather")
 # BEC
 
 ## Intersect land designations with BEC and summarize
-ld_x_bec <- raster::intersect(bec, ld_agg) %>%
-  clgeo_Clean()
+ld_x_bec_tempfile <- "tmp/ld_x_bec.rds"
+ld_x_bec <- tryCatch(readRDS(ld_x_bec_tempfile),
+                     error = function(e) {
+                       raster::intersect(bec, ld_agg) %>%
+                         write_rds(ld_x_bec_tempfile)
+                     })
 
 ld_x_bec$area <- rgeos::gArea(ld_x_bec, byid = TRUE)
-
-ld_agg$area <- gArea(ld_agg, byid = TRUE)
 
 ld_bec_summary <- ld_x_bec@data %>%
   group_by(ZONE, cons_cat) %>%
@@ -99,8 +108,7 @@ ld_bec_summary <- ld_x_bec@data %>%
   write_feather("out/ld_bec_summary.feather")
 
 # Intersect simplified versions for mapping display
-ld_x_bec_simp <- raster::intersect(ld_agg_simp, bec_zone_simp) %>%
-  clgeo_Clean()
+ld_x_bec_simp <- raster::intersect(ld_agg_simp, bec_zone_simp)
 
 gg_ld_x_bec <- gg_fortify(ld_x_bec_simp) %>% write_feather("out/gg_ld_bec.feather")
 gg_bec <- gg_fortify(bec_zone_simp) %>% write_feather("out/gg_bec.feather")
