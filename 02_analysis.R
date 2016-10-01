@@ -19,6 +19,7 @@ library(rmapshaper)
 library(ggplot2)
 library(ggthemes)
 library(dplyr)
+library(tidyr)
 library(feather)
 library(bcmaps)
 library(readr)
@@ -103,6 +104,7 @@ ld_bec_summary <- ld_x_bec@data %>%
   complete(nesting(MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SBZNNM,
                  VARIANT, VRNTNM, bec_area), cons_cat,
            fill = list(area_des = 0, area_des_ha = 0, percent_des = 0)) %>%
+  mutate(cons_cat = as.character(cons_cat)) %>%
   write_feather("out/ld_bec_summary.feather")
 
 # Intersect simplified versions for mapping display
