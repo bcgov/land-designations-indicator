@@ -93,3 +93,26 @@ combine_spatial_list <- function(splist, ...) {
   ## Recombine list elements into one sp object
   do.call(raster::bind, splist, ...)
 }
+
+#' Clip one layer on a boundary layer, ensuring that only the features that overlap
+#' are actually clipped to save processing time
+#'
+#' @param x the target layer
+#' @param bc the boundary layer
+#'
+#' @return A spatial object of the same time as x
+#' @export
+#'
+#' @examples
+clip_only <- function(x, bc) {
+  ## First check if there are any that are completely outside and ditch if so:
+  intersects <- rgeos::gIntersects(x, bc, byid = TRUE, returnDense = TRUE)
+  intersects <- as.logical(colSums(intersects))
+  x <- x[intersects, ]
+
+  # Find the features in x that are not fully covered by the boundary
+  covers <- rgeos::gCoveredBy(bc, x, byid = TRUE, returnDense = TRUE)
+  covers <- as.logical(colSums(covers))
+  clipped <- rmapshaper::ms_clip(x[covers, ], bc)
+  rbind(x[!covers, ], clipped[, names(x)])
+}
