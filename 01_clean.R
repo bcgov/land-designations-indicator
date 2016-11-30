@@ -13,45 +13,82 @@
 library(rgdal)
 library(sp)
 library(rgeos)
+library(raster)
 library(bcmaps)
 library(geojsonio)
 library(rmapshaper)
 library(feather)
-library(cleangeo)
+library(parallel)
 
 source("fun.R")
 
 dir.create("tmp", showWarnings = FALSE)
 
-## The CARTS database is downloadable from the Canadian Council on
-## Ecological Areas here: http://www.ccea.org/carts/
-carts_zip <- "data/CARTS_31122015_Download.zip"
-unzip(carts_zip, exdir = "data", overwrite = TRUE)
-carts <- readOGR("data/CARTS_Update_31122015.gdb", "CARTS_Update_31122015_WithoutQc", stringsAsFactors = FALSE)
-bc_carts <- carts[carts$BIOME == "T" & carts$LOC_E == "British Columbia", ]
+bc_bound_trim <- readOGR("data/BC_Boundary.gdb")
 
-## Mock four categories:
-set.seed(42)
-bc_carts$cons_cat <- sample(c("A", "B", "C", "D"),
-                            size = nrow(bc_carts@data), replace = TRUE)
-bc_carts <- transform_bc_albers(bc_carts)
-mock <- bc_carts[,"cons_cat"]
-mock <- fix_self_intersect(mock)
-mock_ld_agg <- raster::aggregate(mock, by = "cons_cat")
-mock_ld_agg <- fix_self_intersect(mock_ld_agg)
+## Get the spatial file in - read from saved rds if exists, otherwise process raw file
+cl_rds <- "tmp/cl.rds"
+cl_clip_rds <- "tmp/cl_clip.rds"
+if (!file.exists(cl_rds)) {
+  cl <- readOGR("data/conservationlands.gdb", "conservationlands", stringsAsFactors = FALSE)
 
-mock_ld_agg_simp <- geojson_json(mock) %>%
-  ms_simplify(keep = 0.05, keep_shapes = TRUE) %>% # explode = TRUE if want to keep all shapes
-  ms_dissolve(field = "cons_cat") %>%
-  geojson_sp() %>%
-  fix_self_intersect() %>%
-  transform_bc_albers()
+  cl <- fix_geo_problems(cl)
+
+  saveRDS(cl, cl_rds)
+} else {
+  cl <- readRDS(cl_rds)
+}
+
+cl_t <- cl[cl$bc_boundary == "bc_boundary_land_tiled", ]
+
+## Clip to BC Boundary
+if (!file.exists(cl_clip_rds)) {
+  system.time(cl_clip <- parallel_apply(cl, "category",
+                            raster::intersect,
+                            y = bc_bound_hres,
+                            recombine = TRUE)) # 1.5 hrs
+
+  system.time(cl_clip2 <- parallel_apply(cl, "category",
+                            rmapshaper::ms_clip,
+                            clip = bc_bound_hres,
+                            recombine = TRUE))
+
+  saveRDS(cl_clip, cl_clip_rds)
+} else {
+  cl_clip <- readRDS(cl_clip_rds)
+}
+
+## Aggregate by rollup group
+cl_agg_rds <- "tmp/cl_agg.rds"
+if (!file.exists(cl_agg_rds)) {
+  cl_agg <- aggregate(cl_clip[, "rollup"], by = list(cons_cat = cl_clip$rollup), FUN = max)
+  saveRDS(cl_agg, cl_agg_rds)
+} else {
+  cl_agg <- readRDS(cl_agg_rds)
+}
+#
+# mock_ld_agg_simp <- geojson_json(mock) %>%
+#   ms_simplify(keep = 0.05, keep_shapes = TRUE) %>% # explode = TRUE if want to keep all shapes
+#   ms_dissolve(field = "cons_cat") %>%
+#   geojson_sp() %>%
+#   fix_self_intersect() %>%
+#   transform_bc_albers()
 
 ################################################################################
 
+cl_ecosections <- readOGR("data/eco_test.gdb", "ecosections_conservationlands", stringsAsFactors = FALSE)
+
+cl_ecosections <- fix_geo_problems(cl_ecosections)
+
+cl_ecosections_t <- cl_ecosections[cl_ecosections$bc_boundary == "bc_boundary_land_tiled",]
+cl_ecosections_t$des_area <- gArea(cl_ecosections_t, byid = TRUE)
+
+library(dplyr)
+
 ## Ecoregions:
 m_ecoregions <- c("HCS", "IPS", "OPS", "SBC", "TPC")
-
+system.time(t_egoregion_covers <- gCovers(ecoregions, bc_bound_trim, byid = TRUE, returnDense = TRUE))
+system.time(t_egoregion_contains <- gContains(ecoregions, bc_bound_trim, byid = TRUE, returnDense = FALSE))
 ## load ecoregions data from bcmaps package
 data("ecoregions")
 
@@ -84,18 +121,11 @@ if (!file.exists("data/BEC_POLY/BEC_POLY_polygon.shp.shp")) {
   unzip("data/BCGW_78757263_1474302658533_4244.zip", exdir = "data")
 }
 
-# bgc <- readOGR("data/BEC_BIOGEOCLIMATIC_POLY.gdb",
-#                "WHSE_FOREST_VEGETATION_BEC_BIOGEOCLIMATIC_POLY_polygon",
-#                stringsAsFactors = FALSE)
-# writeOGR(bgc, "data", "bec", driver = "ESRI Shapefile")
+bgc <- readOGR("data/BEC_BIOGEOCLIMATIC_POLY.gdb", stringsAsFactors = FALSE)
 
-unlink(paste0("data/", c("bc_bound.geojson", "bec_clip*")))
-geojsonio::geojson_write(bc_bound_hres, file = "data/bc_bound.geojson") # bc_bound_hres is from bcmaps package
-system("mapshaper data/BEC_POLY/BEC_POLY_polygon.shp -clip data/bc_bound.geojson -explode -o data/bec_clip.shp")
-
-## Check for validity of bec polygons
-bec_t <- readOGR("data", "bec_clip", stringsAsFactors = FALSE)
-bec_t <- fix_self_intersect(bec_t)
+## Clip bgc to BC boundary
+bec_t <- clip_only(bgc, bc_bound_trim)
+bec_t <- fix_geo_problems(bec_t)
 bec_t$area <- gArea(bec_t, byid = TRUE)
 
 bec_zone <- raster::aggregate(bec_t, by = "ZONE")
