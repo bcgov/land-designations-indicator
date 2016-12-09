@@ -74,7 +74,6 @@ ld_ecoreg_summary <- ld_x_ecoreg@data %>%
 ld_x_ecoreg_simp <- raster::intersect(ld_agg_simp, ecoreg_simp)
 
 gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("out/gg_ld_ecoreg.feather")
-gg_ecoreg <- gg_fortify(ecoreg_simp) %>% write_feather("out/gg_ecoreg.feather")
 
 # ecoreg_cds <- unique(gg_ecoreg$CRGNCD)
 #
@@ -111,10 +110,6 @@ ld_bec_summary <- ld_x_bec@data %>%
 ld_x_bec_simp <- raster::intersect(ld_agg_simp, bec_zone_simp)
 
 gg_ld_x_bec <- gg_fortify(ld_x_bec_simp) %>% write_feather("out/gg_ld_bec.feather")
-gg_bec <- gg_fortify(bec_zone_simp) %>% write_feather("out/gg_bec.feather")
-
-
-
 
 ####################################
 # ecoregions_list <- lapply(ecoreg$CRGNCD, function(x) {
