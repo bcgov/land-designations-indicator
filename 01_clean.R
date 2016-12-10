@@ -73,7 +73,7 @@ bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
 
 bec_zone <- raster::aggregate(bec_t, by = "ZONE") %>%
   fix_geo_problems()
-bec_zone$area <- gArea(bec_zone, byid = TRUE)
+bec_zone$zone_area <- gArea(bec_zone, byid = TRUE)
 saveRDS(bec_zone, "tmp/bec_zone.rds")
 
 ## Simplify BEC pologyons for use in display
@@ -90,6 +90,21 @@ bec_zone_leaflet$ZONE <- as.character(bec_zone_leaflet$ZONE)
 bec_zone_leaflet$rmapshaperid <- NULL
 saveRDS(bec_zone_leaflet, "out/bec_leaflet.rds")
 
+unzip("data/land_designations_bec_overlay.zip", exdir = "data")
+bec_ld <- readOGR("data/bec.gdb", stringsAsFactors = FALSE) %>%
+  fix_geo_problems()
+bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled", ]
+saveRDS(bec_ld_t, "tmp/bec_ld_t.rds")
+
+bec_ld_geojson <- geojson_json(bec_ld_t)
+
+bec_ld_t@data %>%
+  filter(category %in% c("01_PPA", "02_Protected_Other")) %>%
+  group_by(zone) %>%
+  summarize(area_prot = sum(shape_area)) %>%
+  left_join(bec_zone@data, by = c("zone" = "ZONE")) %>%
+  mutate(percent_prot = area_prot / zone_area) %>%
+  arrange(percent_prot)
 
 ## Get the spatial file in - read from saved rds if exists, otherwise process raw file
 # cl_rds <- "tmp/cl.rds"
