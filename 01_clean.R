@@ -24,13 +24,21 @@ source("fun.R")
 
 dir.create("tmp", showWarnings = FALSE)
 
-bc_bound_trim <- readOGR("data/BC_Boundary.gdb", stringsAsFactors = FALSE)
-bc_bound_trim <- transform_bc_albers(bc_bound_trim)
+bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
+bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
+  bc_bound_trim <- readOGR("data/BC_Boundary.gdb", stringsAsFactors = FALSE)
+  bc_bound_trim <- transform_bc_albers(bc_bound_trim)
+  saveRDS(bc_bound_trim, bc_bound_trim_rds)
+  bc_bound_trim
+})
 
 ## Simplify bc boundary, fortify for ggplot and write to feather file
-bc_bound_simp <- rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001)
-gg_fortify(bc_bound_simp) %>%
-  write_feather("out/gg_bc_bound.feather")
+bc_bound_simp_feather <- "out/gg_bc_bound.feather"
+bc_bound_simp <- tryCatch(readRDS(bc_bound_simp_feather), error = function(e) {
+  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001)
+  gg_fortify(bc_bound_simp) %>%
+  write_feather(bc_bound_simp_feather)
+})
 
 ## Clip Ecoregions to BC Boundary
 ecoreg_t_rds <- "tmp/ecoreg_t.rds"
@@ -45,19 +53,27 @@ ecoregions_t <- tryCatch(readRDS(ecoreg_t_rds), error = function(e) {
 })
 
 ## Create simplified versions of ecoregions for visualization
-ecoregions_t_simp <- ms_simplify(ecoregions_t, 0.01) %>%
-  fix_geo_problems()
+ecoregions_t_simp_rds <- "tmp/ecoregions_t_simp.rds"
+ecoregions_t_simp <- tryCatch(readRDS(ecoregions_t_simp_rds), error = function(e) {
+  eco_t_simp <- ms_simplify(ecoregions_t, 0.01) %>%
+    fix_geo_problems()
+  saveRDS(eco_t_simp, ecoregions_t_simp_rds)
+  eco_t_simp
+})
+
 gg_ecoreg <- gg_fortify(ecoregions_t_simp) %>% write_feather("out/gg_ecoreg.feather")
 
-ecoregions_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
-  fix_geo_problems() %>%
-  spTransform(CRSobj = CRS("+init=epsg:4326"))
-ecoregions_t_simp_leaflet$CRGNCD <- as.character(ecoregions_t_simp_leaflet$CRGNCD)
-ecoregions_t_simp_leaflet$CRGNNM <- tools::toTitleCase(tolower(as.character(ecoregions_t_simp_leaflet$CRGNNM)))
-ecoregions_t_simp_leaflet$rmapshaperid <- NULL
-
-saveRDS(ecoregions_t_simp, "tmp/ecoregions_t_simp.rds")
-saveRDS(ecoregions_t_simp_leaflet, "out/ecoregions_t_leaflet.rds")
+eco_leaflet_rds <- "out/ecoregions_t_leaflet.rds"
+ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
+  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
+    fix_geo_problems() %>%
+    spTransform(CRSobj = CRS("+init=epsg:4326"))
+  eco_t_simp_leaflet$CRGNCD <- as.character(ecoregions_t_simp_leaflet$CRGNCD)
+  eco_t_simp_leaflet$CRGNNM <- tools::toTitleCase(tolower(as.character(ecoregions_t_simp_leaflet$CRGNNM)))
+  eco_t_simp_leaflet$rmapshaperid <- NULL
+  saveRDS(ecoregions_t_simp_leaflet, eco_leaflet_rds)
+  eco_t_simp_leaflet
+})
 
 ## Clip bgc to BC boundary
 bec_t_rds <- "tmp/bec_t.rds"
@@ -71,30 +87,48 @@ bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
   bec_t
 })
 
-bec_zone <- raster::aggregate(bec_t, by = "ZONE") %>%
-  fix_geo_problems()
-bec_zone$zone_area <- gArea(bec_zone, byid = TRUE)
-saveRDS(bec_zone, "tmp/bec_zone.rds")
+bec_zone_rds <- "tmp/bec_zone.rds"
+bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
+  bec_zone <- raster::aggregate(bec_t, by = "ZONE") %>%
+    fix_geo_problems()
+  bec_zone$zone_area <- gArea(bec_zone, byid = TRUE)
+  saveRDS(bec_zone, bec_zone_rds)
+  bec_zone
+})
 
 ## Simplify BEC pologyons for use in display
-bec_zone_simp <- ms_simplify(bec_zone, keep = 0.005)
-## Repair orphaned holes.
-bec_zone_simp <- fix_geo_problems(bec_zone_simp)
-saveRDS(bec_zone_simp, "tmp/bec_zone_simp.rds")
+bec_zone_simp_rds <- "tmp/bec_zone_simp.rds"
+bec_zone_simp <- tryCatch(readRDS(bec_zone_simp_rds), error = function(e) {
+  bec_zone_simp <- ms_simplify(bec_zone, keep = 0.005) %>%
+    fix_geo_problems()
+  saveRDS(bec_zone_simp, bec_zone_simp_rds)
+  bec_zone_simp
+})
+
 gg_bec <- gg_fortify(bec_zone_simp) %>% write_feather("out/gg_bec.feather")
 
-bec_zone_leaflet <- ms_simplify(bec_zone_simp, 0.1) %>%
-  fix_geo_problems() %>%
-  spTransform(CRSobj = CRS("+init=epsg:4326"))
-bec_zone_leaflet$ZONE <- as.character(bec_zone_leaflet$ZONE)
-bec_zone_leaflet$rmapshaperid <- NULL
-saveRDS(bec_zone_leaflet, "out/bec_leaflet.rds")
+bec_zone_leaflet_rds <- "out/bec_leaflet.rds"
+bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) {
+  bec_zone_leaflet <- ms_simplify(bec_zone_simp, 0.1) %>%
+    fix_geo_problems() %>%
+    spTransform(CRSobj = CRS("+init=epsg:4326"))
+  bec_zone_leaflet$ZONE <- as.character(bec_zone_leaflet$ZONE)
+  bec_zone_leaflet$rmapshaperid <- NULL
+  saveRDS(bec_zone_leaflet, bec_zone_leaflet_rds)
+  bec_zone_leaflet
+})
 
-unzip("data/land_designations_bec_overlay.zip", exdir = "data")
-bec_ld <- readOGR("data/bec.gdb", stringsAsFactors = FALSE) %>%
-  fix_geo_problems()
-bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled", ]
-saveRDS(bec_ld_t, "tmp/bec_ld_t.rds")
+bec_ld_rds <- "tmp/bec_ld_t.rds"
+bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
+  unzip("data/land_designations_bec_overlay.zip", exdir = "data")
+  bec_ld <- readOGR("data/bec.gdb", stringsAsFactors = FALSE) %>%
+    fix_geo_problems()
+  bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled", ]
+  saveRDS(bec_ld_t, bec_ld_rds)
+  bec_ld_t
+})
+
+
 
 bec_ld_geojson <- geojson_json(bec_ld_t)
 
@@ -159,4 +193,3 @@ if (!file.exists(cl_agg_rds)) {
 saveRDS(mock, "tmp/mock_spatial.rds")
 saveRDS(mock_ld_agg, "tmp/mock_spatial_agg.rds")
 saveRDS(mock_ld_agg_simp, "tmp/mock_spatial_agg_simp.rds")
-
