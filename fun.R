@@ -60,6 +60,7 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 #' lapply(foo, plot)
 #' bar <- recombine_spatial_list(foo)
 parallel_apply <- function(spdf, column, fun = ms_simplify, ..., recombine = FALSE) {
+  if (!require("parallel")) stop("library 'parallel' was not able to be loaded")
 
   spdf_list <- split_on_attribute(spdf, column)
 
@@ -68,6 +69,8 @@ parallel_apply <- function(spdf, column, fun = ms_simplify, ..., recombine = FAL
   cl <- makeCluster(no_cores)
 
   on.exit(stopCluster(cl))
+
+  clusterEvalQ(cl, library(rmapshaper))
 
   spdf_list_out <- parLapply(cl, spdf_list, fun, ...)
 
