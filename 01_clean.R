@@ -34,9 +34,9 @@ bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
 
 ## Simplify bc boundary, fortify for ggplot and write to feather file
 bc_bound_simp_feather <- "out/gg_bc_bound.feather"
-bc_bound_simp <- tryCatch(readRDS(bc_bound_simp_feather), error = function(e) {
-  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001)
-  gg_fortify(bc_bound_simp) %>%
+bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
+  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
+  gg_fortify() %>%
   write_feather(bc_bound_simp_feather)
 })
 
@@ -128,9 +128,40 @@ bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
   bec_ld_t
 })
 
+## Make some aggregated and simplified products from bec_ld:
+bec_ld_agg <- raster::aggregate(bec_ld_t,
+                                by = c("category", "zone", "subzone", "variant",
+                                       "map_label"))
+
+bec_zone_ld_agg <- raster::aggregate(bec_ld_t, by = c("category", "zone"))
+
+by_zone <- lapply(unique(bec_zone_ld_agg$zone), function(z) {
+  bec_ld_agg[bec_ld_agg$zone == z, ]
+})
+
+system.time(by_zone_simp <- lapply(by_zone, ms_simplify, keep = 0.05, keep_shapes = TRUE))
+system.time(by_zone_double_simp <- lapply(by_zone_simp, ms_simplify, keep = 0.05, keep_shapes = TRUE))
+system.time(by_zone_more_simp <- lapply(by_zone, ms_simplify, keep = 0.001, keep_shapes = TRUE))
+
+system.time(bec_ld_more_simp_par <- parallel_apply(bec_zone_ld_agg, "zone", ms_simplify,
+                                   keep = 0.05, keep_shapes = TRUE,
+                                   recombine = TRUE))
+
+save(bec_ld_agg, bec_zone_ld_agg, by_zone, by_zone_simp, by_zone_more_simp,
+     by_zone_double_simp, )
+
+# Recombine into one sp object and fortify
+
+bec_ld_simp <- combine_spatial_list(by_zone_more_simp) %>% fix_geo_problems()
+
+gg_bec_ld <- gg_fortify(bec_ld_simp)
+
+library(ggplot2)
+ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
+  geom_polypath(aes(fill = category)) +
+  coord_fixed()
 
 
-bec_ld_geojson <- geojson_json(bec_ld_t)
 
 bec_ld_t@data %>%
   filter(category %in% c("01_PPA", "02_Protected_Other")) %>%
