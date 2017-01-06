@@ -28,50 +28,14 @@ source("fun.R")
 
 dir.create("out", showWarnings = FALSE)
 
-# ld <- readRDS("tmp/mock_spatial.rds")
-ld_agg <- readRDS("tmp/mock_spatial_agg.rds")
-ld_agg_simp <- readRDS("tmp/mock_spatial_agg_simp.rds")
-
-ecoreg <- readRDS("tmp/ecoregions_t.rds")
-ecoreg_simp <- readRDS("tmp/ecoregions_t_simp.rds")
-
-bec <- readRDS("tmp/bec_t.rds")
-bec_zone <- readRDS("tmp/bec_zone.rds")
-bec_zone_simp <- readRDS("tmp/bec_zone_simp.rds")
-
-ld_agg$area <- gArea(ld_agg, byid = TRUE)
-
 ## BC Summary
-bc_ld_summary <- ld_agg@data %>%
-  group_by(cons_cat) %>%
-  summarise(area_des = sum(area, na.rm = TRUE)) %>%
+bc_ld_summary <- bec_ld_t@data %>%
+  group_by(category) %>%
+  summarize(area_des_ha = sum(shape_area) * 1e-4) %>%
   mutate(CRGNCD = "BC",
-         percent_des = area_des / bc_area(units = "m2") * 100,
-         area_des_ha = area_des * 1e-4) %>%
+         percent_des = (area_des_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
   write_feather("out/bc_ld_summary.feather")
-
-## Intersect land designations with ecoregions and summarize.
-## Uses readr::write_rds instead of saveRDS because the former returns the value
-ld_x_ecoreg_tempfile <- "tmp/ld_x_ecoreg.rds"
-ld_x_ecoreg <- tryCatch(readRDS(ld_x_ecoreg_tempfile),
-                        error = function(e) {
-                          raster::intersect(ecoreg, ld_agg) %>%
-                            write_rds(ld_x_ecoreg_tempfile)
-                        })
-
-ld_x_ecoreg$area <- rgeos::gArea(ld_x_ecoreg, byid = TRUE)
-
-ld_ecoreg_summary <- ld_x_ecoreg@data %>%
-  group_by(CRGNCD, cons_cat) %>%
-  summarise(area_des = sum(area, na.rm = TRUE)) %>%
-  left_join(group_by(ecoreg@data, CRGNCD) %>%
-              summarize(ecoreg_area = sum(area, na.rm = TRUE)), by = "CRGNCD") %>%
-  mutate(percent_des = area_des / ecoreg_area * 100,
-         area_des_ha = area_des * 1e-4) %>%
-  write_feather("out/ld_ecoreg_summary.feather")
-
-# Intersect simplified versions for mapping display
-ld_x_ecoreg_simp <- raster::intersect(ld_agg_simp, ecoreg_simp)
 
 gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("out/gg_ld_ecoreg.feather")
 
@@ -82,28 +46,19 @@ gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("out/gg_ld_ecor
 ################################################################################
 # BEC
 
-## Intersect land designations with BEC and summarize
-ld_x_bec_tempfile <- "tmp/ld_x_bec.rds"
-ld_x_bec <- tryCatch(readRDS(ld_x_bec_tempfile),
-                     error = function(e) {
-                       raster::intersect(bec, ld_agg) %>%
-                         write_rds(ld_x_bec_tempfile)
-                     })
-
-ld_x_bec$area <- rgeos::gArea(ld_x_bec, byid = TRUE)
-
-ld_bec_summary <- ld_x_bec@data %>%
-  group_by(MAP_LABEL, cons_cat = factor(cons_cat)) %>%
-  summarise(area_des = sum(area, na.rm = TRUE)) %>%
-  right_join(group_by(bec@data, MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SBZNNM,
-                     VARIANT, VRNTNM) %>%
-              summarize(bec_area = sum(area, na.rm = TRUE)), by = "MAP_LABEL") %>%
+bec_cat_summary <- bec_ld_t@data %>%
+  group_by(map_label, category = factor(category)) %>%
+  summarize(area_des = sum(shape_area, na.rm = TRUE)) %>%
+  right_join(group_by(bec_t@data, MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
+                      VARIANT, VARIANT_NAME) %>%
+               summarize(bec_area = sum(bec_area, na.rm = TRUE)),
+             by = c("map_label" = "MAP_LABEL")) %>%
   mutate(percent_des = area_des / bec_area * 100,
          area_des_ha = area_des * 1e-4) %>%
-  complete(nesting(MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SBZNNM,
-                 VARIANT, VRNTNM, bec_area), cons_cat,
+  complete(nesting(map_label, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
+                   VARIANT, VARIANT_NAME, bec_area), category,
            fill = list(area_des = 0, area_des_ha = 0, percent_des = 0)) %>%
-  mutate(cons_cat = as.character(cons_cat)) %>%
+  mutate(category = as.character(category)) %>%
   write_feather("out/ld_bec_summary.feather")
 
 # Intersect simplified versions for mapping display

@@ -18,7 +18,6 @@ library(bcmaps)
 library(geojsonio)
 library(rmapshaper)
 library(feather)
-library(parallel)
 
 source("fun.R")
 
@@ -120,107 +119,73 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
 
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
-  unzip("data/land_designations_bec_overlay.zip", exdir = "data")
-  bec_ld <- readOGR("data/bec.gdb", stringsAsFactors = FALSE) %>%
+  bec_ld <- readOGR("data/lands_bec.gdb", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
-  bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled", ]
+  bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled", ] %>%
+    fix_geo_problems()
   saveRDS(bec_ld_t, bec_ld_rds)
   bec_ld_t
 })
 
-## Make some aggregated and simplified products from bec_ld:
-bec_ld_agg <- raster::aggregate(bec_ld_t,
+# Make some aggregated and simplified products from bec_ld:
+bec_ld_agg_rds <- "tmp/bec_ld_agg.rds"
+bec_ld_agg <- tryCatch(readRDS(bec_ld_agg_rds), error = function(e) {
+  bec_ld_agg <- raster::aggregate(bec_ld_t,
                                 by = c("category", "zone", "subzone", "variant",
-                                       "map_label"))
+                                       "map_label")) %>%
+  fix_geo_problems()
+  saveRDS(bec_ld_agg, bec_ld_agg_rds)
+  bec_ld_agg
+})
 
-bec_zone_ld_agg <- raster::aggregate(bec_ld_t, by = c("category", "zone"))
+bec_ld_agg_zone_rds <- "tmp/bec_ld_agg_zone.rds"
+bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
+  bec_ld_agg_zone <- raster::aggregate(bec_ld_agg, by = c("zone", "category")) %>%
+    fix_geo_problems()
+  saveRDS(bec_ld_agg_zone, bec_ld_agg_zone_rds)
+  bec_ld_agg_zone
+})
 
-by_zone <- lapply(unique(bec_zone_ld_agg$zone), function(z) {
+by_zone <- lapply(unique(bec_ld_agg_zone$zone), function(z) {
   bec_ld_agg[bec_ld_agg$zone == z, ]
 })
 
-system.time(by_zone_simp <- lapply(by_zone, ms_simplify, keep = 0.05, keep_shapes = TRUE))
-system.time(by_zone_double_simp <- lapply(by_zone_simp, ms_simplify, keep = 0.05, keep_shapes = TRUE))
-system.time(by_zone_more_simp <- lapply(by_zone, ms_simplify, keep = 0.001, keep_shapes = TRUE))
-
-system.time(bec_ld_more_simp_par <- parallel_apply(bec_zone_ld_agg, "zone", ms_simplify,
-                                   keep = 0.05, keep_shapes = TRUE,
-                                   recombine = TRUE))
-
-save(bec_ld_agg, bec_zone_ld_agg, by_zone, by_zone_simp, by_zone_more_simp,
-     by_zone_double_simp, )
+system.time(by_zone_simp <- lapply(by_zone, ms_simplify, keep = 0.001,
+                                   explode = TRUE, keep_shapes = TRUE))
 
 # Recombine into one sp object and fortify
 
-bec_ld_simp <- combine_spatial_list(by_zone_more_simp) %>% fix_geo_problems()
+bec_ld_simp <- combine_spatial_list(by_zone_simp) %>%
+  fix_geo_problems() %>%
+  raster::aggregate(by = c("category", "zone"))
 
 gg_bec_ld <- gg_fortify(bec_ld_simp)
 
+####################
+
 library(ggplot2)
-ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
+library(ggpolypath)
+ggplot(gg_bec_ld[gg_bec_ld$zone == "BWBS", ], aes(x = long, y = lat, group = group)) +
   geom_polypath(aes(fill = category)) +
   coord_fixed()
 
+library(readr)
 
+cat_summary <- bec_ld_t@data %>%
+  group_by(category) %>%
+  summarize(area_prot_ha = sum(shape_area) * 1e-4) %>%
+  mutate(percent_prot = (area_prot_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  arrange(category) %>%
+  write_csv("out/designation_categories_summary.csv")
 
-bec_ld_t@data %>%
-  filter(category %in% c("01_PPA", "02_Protected_Other")) %>%
-  group_by(zone) %>%
-  summarize(area_prot = sum(shape_area)) %>%
+bec_zone_cat_summary <- bec_ld_t@data %>%
+  group_by(zone, category) %>%
+  summarize(area_designated_ha = sum(shape_area) * 1e-4) %>%
   left_join(bec_zone@data, by = c("zone" = "ZONE")) %>%
-  mutate(percent_prot = area_prot / zone_area) %>%
-  arrange(percent_prot)
-
-## Get the spatial file in - read from saved rds if exists, otherwise process raw file
-# cl_rds <- "tmp/cl.rds"
-# cl_clip_rds <- "tmp/cl_clip.rds"
-# if (!file.exists(cl_rds)) {
-#   cl <- readOGR("data/conservationlands.gdb", "conservationlands", stringsAsFactors = FALSE)
-#
-#   cl <- fix_geo_problems(cl)
-#
-#   saveRDS(cl, cl_rds)
-# } else {
-#   cl <- readRDS(cl_rds)
-# }
-#
-# cl_t <- cl[cl$bc_boundary == "bc_boundary_land_tiled", ]
-
-## Clip to BC Boundary
-# if (!file.exists(cl_clip_rds)) {
-#   system.time(cl_clip <- parallel_apply(cl, "category",
-#                             raster::intersect,
-#                             y = bc_bound_hres,
-#                             recombine = TRUE)) # 1.5 hrs
-#
-#   system.time(cl_clip2 <- parallel_apply(cl, "category",
-#                             rmapshaper::ms_clip,
-#                             clip = bc_bound_hres,
-#                             recombine = TRUE))
-#
-#   saveRDS(cl_clip, cl_clip_rds)
-# } else {
-#   cl_clip <- readRDS(cl_clip_rds)
-# }
-
-## Aggregate by rollup group
-cl_agg_rds <- "tmp/cl_agg.rds"
-if (!file.exists(cl_agg_rds)) {
-  cl_agg <- aggregate(cl_clip[, "rollup"], by = list(cons_cat = cl_clip$rollup), FUN = max)
-  saveRDS(cl_agg, cl_agg_rds)
-} else {
-  cl_agg <- readRDS(cl_agg_rds)
-}
-#
-# mock_ld_agg_simp <- geojson_json(mock) %>%
-#   ms_simplify(keep = 0.05, keep_shapes = TRUE) %>% # explode = TRUE if want to keep all shapes
-#   ms_dissolve(field = "cons_cat") %>%
-#   geojson_sp() %>%
-#   fix_self_intersect() %>%
-#   transform_bc_albers()
-
-################################################################################
-
-saveRDS(mock, "tmp/mock_spatial.rds")
-saveRDS(mock_ld_agg, "tmp/mock_spatial_agg.rds")
-saveRDS(mock_ld_agg_simp, "tmp/mock_spatial_agg_simp.rds")
+  mutate(zone_area_ha = area * 1e-4,
+         percent_designated = area_designated_ha / zone_area_ha * 100) %>%
+  select(-area) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  arrange(zone, category) %>%
+  write_csv("out/designation_categories_by_bec_zone.csv")

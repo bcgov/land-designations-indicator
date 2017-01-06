@@ -43,7 +43,7 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 
 
 #' Split a large SpatialPolygonsDataFrame into a list and apply a mapshaper function
-#' to each element in Parallel
+#' to each element in parallel
 #'
 #' @param spdf
 #' @param column
@@ -60,7 +60,7 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 #' lapply(foo, plot)
 #' bar <- recombine_spatial_list(foo)
 parallel_apply <- function(spdf, column, fun = ms_simplify, ..., recombine = FALSE) {
-  if (!require("parallel")) stop("library 'parallel' was not able to be loaded")
+  if (!require("parallel")) stop("library 'parallel' not available")
 
   spdf_list <- split_on_attribute(spdf, column)
 
