@@ -29,11 +29,10 @@ source("fun.R")
 dir.create("out", showWarnings = FALSE)
 
 ## BC Summary
-bc_ld_summary <- bec_ld_t@data %>%
+bc_ld_summary <- ld_t@data %>%
   group_by(category) %>%
-  summarize(area_des_ha = sum(shape_area) * 1e-4) %>%
-  mutate(CRGNCD = "BC",
-         percent_des = (area_des_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
+  summarize(area_des_ha = sum(area) * 1e-4) %>%
+  mutate(percent_des = (area_des_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
   mutate_if(is.numeric, round, digits = 2) %>%
   write_feather("out/bc_ld_summary.feather")
 
@@ -59,10 +58,8 @@ bec_cat_summary <- bec_ld_t@data %>%
                    VARIANT, VARIANT_NAME, bec_area), category,
            fill = list(area_des = 0, area_des_ha = 0, percent_des = 0)) %>%
   mutate(category = as.character(category)) %>%
+  rename(MAP_LABEL = map_label) %>%
   write_feather("out/ld_bec_summary.feather")
-
-# Intersect simplified versions for mapping display
-ld_x_bec_simp <- raster::intersect(ld_agg_simp, bec_zone_simp)
 
 gg_ld_x_bec <- gg_fortify(ld_x_bec_simp) %>% write_feather("out/gg_ld_bec.feather")
 
