@@ -117,6 +117,20 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
   bec_zone_leaflet
 })
 
+## Get full land designations file
+ld_t_rds <- "tmp/ld_t.rds"
+ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
+  ld <- readOGR("data/conservationlands.gdb", stringsAsFactors = FALSE) %>%
+    fix_geo_problems()
+  ld_t <- ld[ld$bc_boundary == "bc_boundary_land_tiled", ] %>%
+    fix_geo_problems()
+  ld_t$area <- rgeos::gArea(ld_t, byid = TRUE)
+  saveRDS(ld_t, ld_t_rds)
+  ld_t
+})
+ld_test <- ld_t[ld_t$map_tile %in% unique(ld_t$map_tile)[1:500], ]
+system.time(ld_t_simp <- mapshaper_apply(ld_test, "map_tile", ms_simplify, keep_shapes = TRUE))
+
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
   bec_ld <- readOGR("data/lands_bec.gdb", stringsAsFactors = FALSE) %>%
