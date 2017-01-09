@@ -160,20 +160,28 @@ bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
   bec_ld_agg_zone
 })
 
+by_tile <- lapply(unique(bec_ld_t$map_tile), function(t) {
+  bec_ld_t[bec_ld_t$map_tile == t, ]
+})
+
+foo <- lapply(by_tile[1:100], ms_simplify, keep = 0.01, keep_shapes = TRUE)
+
+
+
 by_zone <- lapply(unique(bec_ld_agg_zone$zone), function(z) {
   bec_ld_agg[bec_ld_agg$zone == z, ]
 })
 
 system.time(by_zone_simp <- lapply(by_zone, ms_simplify, keep = 0.001,
-                                   explode = TRUE, keep_shapes = TRUE))
+                                   keep_shapes = TRUE))
 
 # Recombine into one sp object and fortify
 
-bec_ld_simp <- combine_spatial_list(by_zone_simp) %>%
+bec_ld_simp <- combine_spatial_list(foo) %>%
   fix_geo_problems() %>%
   raster::aggregate(by = c("category", "zone"))
 
-gg_bec_ld <- gg_fortify(bec_ld_simp)
+gg_bec_ld <- gg_fortify(bec_ld_simp) ## Need to write this to feather as in 02_analysis
 
 ####################
 
