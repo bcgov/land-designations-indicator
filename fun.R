@@ -43,7 +43,7 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 
 
 #' Split a large SpatialPolygonsDataFrame into a list and apply a mapshaper function
-#' to each element in parallel
+#' to each element (optionally in parallel)
 #'
 #' @param spdf
 #' @param column
@@ -56,23 +56,27 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 #'
 #' @examples
 #' library(bcmaps)
-#' foo <- parallel_mapshaper(ecoprovinces, "CPRVNCCD", ms_simplify, keep_shapes = TRUE, recombine = FALSE)
+#' foo <- mapshaper_apply(ecoprovinces, "CPRVNCCD", ms_simplify, keep_shapes = TRUE, recombine = FALSE)
 #' lapply(foo, plot)
 #' bar <- recombine_spatial_list(foo)
-parallel_apply <- function(spdf, column, fun = ms_simplify, ..., recombine = FALSE) {
-  if (!require("parallel")) stop("library 'parallel' not available")
+mapshaper_apply <- function(spdf, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
+  if (parallel && !require("parallel")) stop("library 'parallel' not available")
 
   spdf_list <- split_on_attribute(spdf, column)
 
-  ## Do the simplification in Parallel:
-  no_cores <- detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
-  cl <- makeCluster(no_cores)
+  if (parallel) {
+    ## Do the simplification in Parallel:
+    no_cores <- detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
+    cl <- makeCluster(no_cores)
 
-  on.exit(stopCluster(cl))
+    on.exit(stopCluster(cl))
 
-  clusterEvalQ(cl, library(rmapshaper))
+    clusterEvalQ(cl, library(rmapshaper))
 
-  spdf_list_out <- parLapply(cl, spdf_list, fun, ...)
+    spdf_list_out <- parLapply(cl, spdf_list, fun, ...)
+  } else {
+    spdf_list_out <- lapply(spdf_list, fun, ...)
+  }
 
   if (!recombine) return(spdf_list_out)
 
