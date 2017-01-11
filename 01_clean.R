@@ -19,6 +19,9 @@ library(geojsonio)
 library(rmapshaper)
 library(feather)
 
+library(dplyr)
+library(sf)
+
 source("fun.R")
 
 dir.create("tmp", showWarnings = FALSE)
@@ -128,9 +131,40 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
   saveRDS(ld_t, ld_t_rds)
   ld_t
 })
-ld_test <- ld_t[ld_t$map_tile %in% unique(ld_t$map_tile)[1:500], ]
+
+## Simplify provincial coverage
+ld_test <- ld_sf[ld_sf$map_tile %in% unique(ld_t$map_tile)[1:10], ]
 system.time(ld_t_simp <- mapshaper_apply(ld_test, "map_tile", ms_simplify, keep_shapes = TRUE))
 
+## Load Ecosections x land designations (using sf)
+eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
+eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
+  eco_ld_t <- st_read("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
+    filter(bc_boundary == "bc_boundary_land_tiled",
+           !is.na(category),
+           category != "") %>%
+    select(eco_ld_t, designation, map_tile, category, parent_ecoregion_code,
+           ecosection_name, ecosection_code, shape_area, SHAPE) %>%
+    fix_geo_problems()
+  saveRDS(eco_ld_t, eco_ld_sf_rds)
+  eco_ld_t
+})
+
+eco_ld_rds <- "tmp/eco_ld_t.rds"
+eco_ld_t <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
+  eco_ld <- readOGR("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
+    fix_geo_problems()
+  eco_ld_t <- eco_ld[eco_ld$bc_boundary == "bc_boundary_land_tiled" &
+                       eco_ld$category != "" & !is.na(eco_ld$category),
+                     c("designation", "map_tile", "category",
+                     "parent_ecoregion_code", "ecosection_name",
+                     "ecosection_code", "shape_area")] %>%
+    fix_geo_problems()
+  saveRDS(eco_ld_t, eco_ld_rds)
+  eco_ld_t
+})
+
+## Load BEC x land designations
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
   bec_ld <- readOGR("data/lands_bec.gdb", stringsAsFactors = FALSE) %>%
@@ -165,8 +199,6 @@ by_tile <- lapply(unique(bec_ld_t$map_tile), function(t) {
 })
 
 foo <- lapply(by_tile[1:100], ms_simplify, keep = 0.01, keep_shapes = TRUE)
-
-
 
 by_zone <- lapply(unique(bec_ld_agg_zone$zone), function(z) {
   bec_ld_agg[bec_ld_agg$zone == z, ]
