@@ -133,8 +133,8 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
 })
 
 ## Simplify provincial coverage
-ld_test <- ld_sf[ld_sf$map_tile %in% unique(ld_t$map_tile)[1:10], ]
-system.time(ld_t_simp <- mapshaper_apply(ld_test, "map_tile", ms_simplify, keep_shapes = TRUE))
+# ld_test <- ld_sf[ld_sf$map_tile %in% unique(ld_t$map_tile)[1:10], ]
+# system.time(ld_t_simp <- mapshaper_apply(ld_test, "map_tile", ms_simplify, keep_shapes = TRUE))
 
 ## Load Ecosections x land designations (using sf)
 eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
