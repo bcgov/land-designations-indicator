@@ -83,6 +83,33 @@ mapshaper_apply <- function(spdf, column, fun = ms_simplify, ..., parallel = FAL
   combine_spatial_list(spdf_list_out)
 }
 
+mapshaper_apply_sf <- function(sf, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
+    if (parallel && !require("parallel")) stop("library 'parallel' not available")
+
+    sf_list <- split_on_attribute(sf, column)
+    gj_list <- lapply(sf_list, geojson_json)
+
+    if (parallel) {
+      ## Do the simplification in Parallel:
+      no_cores <- detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
+      cl <- makeCluster(no_cores)
+
+      on.exit(stopCluster(cl))
+
+      clusterEvalQ(cl, library(rmapshaper))
+
+      geojson_list_out <- parLapply(cl, gj_list, fun, ...)
+    } else {
+      geojson_list_out <- lapply(gj_list, fun, ...)
+    }
+
+    sf_list_out <- lapply(geojson_list_out, st_read)
+
+    if (!recombine) return(sf_list_out)
+
+    dplyr::bind_rows(sf_list_out)
+}
+
 split_on_attribute <- function(spdf, column) {
   lapply(spdf[[column]], function(x) {
     spdf[spdf[[column]] == x,]
