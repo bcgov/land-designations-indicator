@@ -63,6 +63,21 @@ bec_cat_summary <- bec_ld_t@data %>%
 
 gg_ld_x_bec <- gg_fortify(ld_x_bec_simp) %>% write_feather("out/gg_ld_bec.feather")
 
+################################################################################
+# Ecoregions
+eco_cat_summary <- eco_ld_t@data %>%
+  group_by(CRGNCD = parent_ecoregion_code, category = factor(category)) %>%
+  summarize(area_des = sum(shape_area, na.rm = TRUE)) %>%
+  complete(CRGNCD, category,
+           fill = list(area_des = 0)) %>%
+  mutate(category = as.character(category)) %>%
+  right_join(select(ecoregions_t@data, CRGNCD, ecoreg_area),
+             by = "CRGNCD") %>%
+  mutate(percent_des = area_des / ecoreg_area * 100,
+         area_des_ha = area_des * 1e-4) %>%
+  write_feather("out/ld_ecoreg_summary.feather")
+
+
 ####################################
 # ecoregions_list <- lapply(ecoreg$CRGNCD, function(x) {
 #   ecoreg[ecoreg$CRGNCD == x,]

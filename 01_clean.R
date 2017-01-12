@@ -125,7 +125,8 @@ ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
   ld <- readOGR("data/conservationlands.gdb", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
-  ld_t <- ld[ld$bc_boundary == "bc_boundary_land_tiled", ] %>%
+  ld_t <- ld[ld$bc_boundary == "bc_boundary_land_tiled" &
+               ld$category != "" & !is.na(ld$category), ] %>%
     fix_geo_problems()
   ld_t$area <- rgeos::gArea(ld_t, byid = TRUE)
   saveRDS(ld_t, ld_t_rds)
@@ -169,7 +170,8 @@ bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
   bec_ld <- readOGR("data/lands_bec.gdb", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
-  bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled", ] %>%
+  bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled" &
+                       bec_ld$category != "" & !is.na(bec_ld$category), ] %>%
     fix_geo_problems()
   saveRDS(bec_ld_t, bec_ld_rds)
   bec_ld_t
