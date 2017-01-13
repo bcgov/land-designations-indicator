@@ -137,34 +137,6 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
 # ld_test <- ld_sf[ld_sf$map_tile %in% unique(ld_t$map_tile)[1:10], ]
 # system.time(ld_t_simp <- mapshaper_apply(ld_test, "map_tile", ms_simplify, keep_shapes = TRUE))
 
-## Load Ecosections x land designations (using sf)
-eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
-eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
-  eco_ld_t <- st_read("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
-    filter(bc_boundary == "bc_boundary_land_tiled",
-           !is.na(category),
-           category != "") %>%
-    select(eco_ld_t, designation, map_tile, category, parent_ecoregion_code,
-           ecosection_name, ecosection_code, shape_area, SHAPE) %>%
-    fix_geo_problems()
-  saveRDS(eco_ld_t, eco_ld_sf_rds)
-  eco_ld_t
-})
-
-eco_ld_rds <- "tmp/eco_ld_t.rds"
-eco_ld_t <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
-  eco_ld <- readOGR("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
-    fix_geo_problems()
-  eco_ld_t <- eco_ld[eco_ld$bc_boundary == "bc_boundary_land_tiled" &
-                       eco_ld$category != "" & !is.na(eco_ld$category),
-                     c("designation", "map_tile", "category",
-                     "parent_ecoregion_code", "ecosection_name",
-                     "ecosection_code", "shape_area")] %>%
-    fix_geo_problems()
-  saveRDS(eco_ld_t, eco_ld_rds)
-  eco_ld_t
-})
-
 ## Load BEC x land designations
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
@@ -196,26 +168,86 @@ bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
   bec_ld_agg_zone
 })
 
-by_tile <- lapply(unique(bec_ld_t$map_tile), function(t) {
-  bec_ld_t[bec_ld_t$map_tile == t, ]
+## Load Ecosections x land designations (using sf)
+eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
+eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
+  eco_ld_t <- st_read("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
+    filter(bc_boundary == "bc_boundary_land_tiled",
+           !is.na(category),
+           category != "") %>%
+    select(eco_ld_t, designation, map_tile, category, parent_ecoregion_code,
+           ecosection_name, ecosection_code, shape_area, SHAPE) %>%
+    fix_geo_problems()
+  saveRDS(eco_ld_t, eco_ld_sf_rds)
+  eco_ld_t
 })
 
-foo <- lapply(by_tile[1:100], ms_simplify, keep = 0.01, keep_shapes = TRUE)
-
-by_zone <- lapply(unique(bec_ld_agg_zone$zone), function(z) {
-  bec_ld_agg[bec_ld_agg$zone == z, ]
+eco_ld_rds <- "tmp/eco_ld_t.rds"
+eco_ld_t <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
+  eco_ld <- readOGR("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
+    fix_geo_problems()
+  eco_ld_t <- eco_ld[eco_ld$bc_boundary == "bc_boundary_land_tiled" &
+                       eco_ld$category != "" & !is.na(eco_ld$category),
+                     c("designation", "map_tile", "category",
+                       "parent_ecoregion_code", "ecosection_name",
+                       "ecosection_code", "shape_area")] %>%
+    fix_geo_problems()
+  saveRDS(eco_ld_t, eco_ld_rds)
+  eco_ld_t
 })
 
-system.time(by_zone_simp <- lapply(by_zone, ms_simplify, keep = 0.001,
-                                   keep_shapes = TRUE))
+ecosec_ld_agg_rds <- "tmp/ecosec_ld_agg.rds"
+ecosec_ld_agg <- tryCatch(readRDS(ecosec_ld_agg_rds), error = function(e) {
+  ecosec_ld_agg <- raster::aggregate(eco_ld_t, by = c("category",
+                                                   "parent_ecoregion_code",
+                                                   "ecosection_name",
+                                                   "ecosection_code")) %>%
+    fix_geo_problems()
+  saveRDS(ecosec_ld_agg, ecosec_ld_agg_rds)
+  ecosec_ld_agg
+})
 
-# Recombine into one sp object and fortify
+ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
+ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
+  ecoreg_ld_agg <- raster::aggregate(ecosec_ld_agg, by = c("category",
+                                                      "parent_ecoregion_code")) %>%
+    fix_geo_problems()
+  saveRDS(ecoreg_ld_agg, ecoreg_ld_agg_rds)
+  ecoreg_ld_agg
+})
 
-bec_ld_simp <- combine_spatial_list(foo) %>%
+# system.time(ld_ecosec_simp <- mapshaper_apply(ecosec_ld_agg, "parent_ecoregion_code", ms_simplify,
+#                                               keep = 0.005, keep_shapes = TRUE,
+#                                               parallel = FALSE, recombine = TRUE))
+
+ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
+ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
+  ld_ecoreg_simp <- mapshaper_apply(ecoreg_ld_agg, "parent_ecoregion_code", ms_simplify,
+                                  keep = 0.005, keep_shapes = TRUE,
+                                  parallel = FALSE, recombine = TRUE) %>%
   fix_geo_problems() %>%
-  raster::aggregate(by = c("category", "zone"))
+  raster::aggregate(by = c("category","parent_ecoregion_code"))
+  saveRDS(ld_ecoreg_simp, ld_ecoreg_simp_rds)
+  ld_ecoreg_simp
+})
 
-gg_bec_ld <- gg_fortify(bec_ld_simp) ## Need to write this to feather as in 02_analysis
+ld_ecoreg_simp_more <- ms_simplify(ld_ecoreg_simp, keep = 0.05, keep_shapes = TRUE) %>%
+  fix_geo_problems()
+
+gg_ld_ecoreg <- gg_fortify(ld_ecoreg_simp_more) %>%
+  rename(CRGNCD = parent_ecoregion_code) %>%
+  select(-rmapshaperid) %>%
+  write_feather("out/gg_ld_ecoreg.feather")
+
+
+
+
+
+library(ggplot2)
+library(ggpolypath)
+ggplot(gg_ld_ecoreg, aes(x = long, y = lat, group = group)) +
+  geom_polypath(aes(fill = category)) +
+  coord_fixed()
 
 ####################
 
