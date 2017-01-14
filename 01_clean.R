@@ -133,10 +133,6 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
   ld_t
 })
 
-## Simplify provincial coverage
-# ld_test <- ld_sf[ld_sf$map_tile %in% unique(ld_t$map_tile)[1:10], ]
-# system.time(ld_t_simp <- mapshaper_apply(ld_test, "map_tile", ms_simplify, keep_shapes = TRUE))
-
 ## Load BEC x land designations
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
@@ -166,6 +162,17 @@ bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
     fix_geo_problems()
   saveRDS(bec_ld_agg_zone, bec_ld_agg_zone_rds)
   bec_ld_agg_zone
+})
+
+ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
+ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
+  ld_bec_simp <- mapshaper_apply(bec_ld_agg_zone, "zone", ms_simplify,
+                                    keep = 0.005, keep_shapes = TRUE,
+                                    parallel = FALSE, recombine = TRUE) %>%
+    fix_geo_problems() %>%
+    raster::aggregate(by = c("category","zone"))
+  saveRDS(ld_bec_simp, ld_bec_simp_rds)
+  ld_bec_simp
 })
 
 ## Load Ecosections x land designations (using sf)
@@ -215,10 +222,6 @@ ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
   saveRDS(ecoreg_ld_agg, ecoreg_ld_agg_rds)
   ecoreg_ld_agg
 })
-
-# system.time(ld_ecosec_simp <- mapshaper_apply(ecosec_ld_agg, "parent_ecoregion_code", ms_simplify,
-#                                               keep = 0.005, keep_shapes = TRUE,
-#                                               parallel = FALSE, recombine = TRUE))
 
 ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
 ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
