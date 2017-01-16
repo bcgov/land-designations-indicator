@@ -164,6 +164,7 @@ bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
   bec_ld_agg_zone
 })
 
+## Simplify bec x ld
 ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
 ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
   ld_bec_simp <- mapshaper_apply(bec_ld_agg_zone, "zone", ms_simplify,
@@ -223,6 +224,7 @@ ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
   ecoreg_ld_agg
 })
 
+## Simplify ld x ecoregions
 ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
 ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
   ld_ecoreg_simp <- mapshaper_apply(ecoreg_ld_agg, "parent_ecoregion_code", ms_simplify,
@@ -234,6 +236,7 @@ ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
   ld_ecoreg_simp
 })
 
+## Simplify lx ecoregion and ld x bec more, fortify for use with ggplot, and write out
 ld_ecoreg_simp_more <- ms_simplify(ld_ecoreg_simp, keep = 0.05, keep_shapes = TRUE) %>%
   fix_geo_problems()
 
@@ -242,13 +245,19 @@ gg_ld_ecoreg <- gg_fortify(ld_ecoreg_simp_more) %>%
   select(-rmapshaperid) %>%
   write_feather("out/gg_ld_ecoreg.feather")
 
+ld_bec_simp_more <- ms_simplify(ld_bec_simp, keep = 0.05, keep_shapes = TRUE) %>%
+  fix_geo_problems()
 
+gg_ld_bec <- gg_fortify(ld_bec_simp_more) %>%
+  rename(ZONE = zone) %>%
+  select(-rmapshaperid) %>%
+  write_feather("out/gg_ld_bec.feather")
 
-
+##############
 
 library(ggplot2)
 library(ggpolypath)
-ggplot(gg_ld_ecoreg, aes(x = long, y = lat, group = group)) +
+ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
   geom_polypath(aes(fill = category)) +
   coord_fixed()
 
