@@ -36,12 +36,6 @@ bc_ld_summary <- ld_t@data %>%
   mutate_if(is.numeric, round, digits = 2) %>%
   write_feather("out/bc_ld_summary.feather")
 
-gg_ld_x_ecoreg <- gg_fortify(ld_x_ecoreg_simp) %>% write_feather("out/gg_ld_ecoreg.feather")
-
-# ecoreg_cds <- unique(gg_ecoreg$CRGNCD)
-#
-# lapply(ecoreg_cds, gg_ld_ecoreg, gg_ld_x_ecoreg, gg_ecoreg)
-
 ################################################################################
 # BEC
 
@@ -65,6 +59,7 @@ gg_ld_x_bec <- gg_fortify(ld_x_bec_simp) %>% write_feather("out/gg_ld_bec.feathe
 
 ################################################################################
 # Ecoregions
+
 eco_cat_summary <- eco_ld_t@data %>%
   group_by(CRGNCD = parent_ecoregion_code, category = factor(category)) %>%
   summarize(area_des = sum(shape_area, na.rm = TRUE)) %>%
@@ -76,21 +71,4 @@ eco_cat_summary <- eco_ld_t@data %>%
   mutate(percent_des = area_des / ecoreg_area * 100,
          area_des_ha = area_des * 1e-4) %>%
   write_feather("out/ld_ecoreg_summary.feather")
-
-
-####################################
-# ecoregions_list <- lapply(ecoreg$CRGNCD, function(x) {
-#   ecoreg[ecoreg$CRGNCD == x,]
-# })
-#
-# names(ecoregions_list) <- ecoreg$CRGNCD
-#
-# # This takes about 30 minutes
-# # ld_ecoreg_clip_list <- lapply(ecoregions_list, function(x) {
-# #   rmapshaper::ms_clip(ld_agg, x)
-# # })
-#
-# names(ld_ecoreg_clip_list) <- ecoreg$CRGNCD
-#
-# lapply(names(ld_ecoreg_clip_list), plot_ecoreg_land_des, ecoregions_list, ld_ecoreg_clip_list)
 

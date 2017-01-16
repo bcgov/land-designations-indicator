@@ -18,6 +18,7 @@ library(bcmaps)
 library(geojsonio)
 library(rmapshaper)
 library(feather)
+library(readr)
 
 library(dplyr)
 library(sf)
@@ -257,19 +258,14 @@ gg_ld_bec <- gg_fortify(ld_bec_simp_more) %>%
 
 library(ggplot2)
 library(ggpolypath)
+
 ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
   geom_polypath(aes(fill = category)) +
   coord_fixed()
 
-####################
-
-library(ggplot2)
-library(ggpolypath)
-ggplot(gg_bec_ld[gg_bec_ld$zone == "BWBS", ], aes(x = long, y = lat, group = group)) +
+ggplot(gg_ld_ecoreg, aes(x = long, y = lat, group = group)) +
   geom_polypath(aes(fill = category)) +
   coord_fixed()
-
-library(readr)
 
 cat_summary <- bec_ld_t@data %>%
   group_by(category) %>%
