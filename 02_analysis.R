@@ -27,6 +27,7 @@ library(readr)
 source("fun.R")
 
 dir.create("out", showWarnings = FALSE)
+dir.create("out-shiny", showWarnings = FALSE)
 
 ## BC Summary
 bc_ld_summary <- ld_t@data %>%
@@ -34,7 +35,7 @@ bc_ld_summary <- ld_t@data %>%
   summarize(area_des_ha = sum(area) * 1e-4) %>%
   mutate(percent_des = (area_des_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
   mutate_if(is.numeric, round, digits = 2) %>%
-  write_feather("out/bc_ld_summary.feather")
+write_feather("out-shiny/bc_ld_summary.feather")
 
 ################################################################################
 # BEC
@@ -53,9 +54,7 @@ bec_cat_summary <- bec_ld_t@data %>%
            fill = list(area_des = 0, area_des_ha = 0, percent_des = 0)) %>%
   mutate(category = as.character(category)) %>%
   rename(MAP_LABEL = map_label) %>%
-  write_feather("out/ld_bec_summary.feather")
-
-gg_ld_x_bec <- gg_fortify(ld_x_bec_simp) %>% write_feather("out/gg_ld_bec.feather")
+  write_feather("out-shiny/ld_bec_summary.feather")
 
 ################################################################################
 # Ecoregions
@@ -70,5 +69,5 @@ eco_cat_summary <- eco_ld_t@data %>%
              by = "CRGNCD") %>%
   mutate(percent_des = area_des / ecoreg_area * 100,
          area_des_ha = area_des * 1e-4) %>%
-  write_feather("out/ld_ecoreg_summary.feather")
+  write_feather("out-shiny/ld_ecoreg_summary.feather")
 

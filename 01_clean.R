@@ -26,6 +26,7 @@ library(sf)
 source("fun.R")
 
 dir.create("tmp", showWarnings = FALSE)
+dir.create("out-shiny", showWarnings = FALSE)
 
 bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
 bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
@@ -36,7 +37,7 @@ bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
 })
 
 ## Simplify bc boundary, fortify for ggplot and write to feather file
-bc_bound_simp_feather <- "out/gg_bc_bound.feather"
+bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
 bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
   rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
   gg_fortify() %>%
@@ -64,9 +65,9 @@ ecoregions_t_simp <- tryCatch(readRDS(ecoregions_t_simp_rds), error = function(e
   eco_t_simp
 })
 
-gg_ecoreg <- gg_fortify(ecoregions_t_simp) %>% write_feather("out/gg_ecoreg.feather")
+gg_ecoreg <- gg_fortify(ecoregions_t_simp) %>% write_feather("out-shiny/gg_ecoreg.feather")
 
-eco_leaflet_rds <- "out/ecoregions_t_leaflet.rds"
+eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
 ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
   eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
     fix_geo_problems() %>%
@@ -108,9 +109,9 @@ bec_zone_simp <- tryCatch(readRDS(bec_zone_simp_rds), error = function(e) {
   bec_zone_simp
 })
 
-gg_bec <- gg_fortify(bec_zone_simp) %>% write_feather("out/gg_bec.feather")
+gg_bec <- gg_fortify(bec_zone_simp) %>% write_feather("out-shiny/gg_bec.feather")
 
-bec_zone_leaflet_rds <- "out/bec_leaflet.rds"
+bec_zone_leaflet_rds <- "out-shiny/bec_leaflet.rds"
 bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) {
   bec_zone_leaflet <- ms_simplify(bec_zone_simp, 0.1) %>%
     fix_geo_problems() %>%
@@ -244,7 +245,7 @@ ld_ecoreg_simp_more <- ms_simplify(ld_ecoreg_simp, keep = 0.05, keep_shapes = TR
 gg_ld_ecoreg <- gg_fortify(ld_ecoreg_simp_more) %>%
   rename(CRGNCD = parent_ecoregion_code) %>%
   select(-rmapshaperid) %>%
-  write_feather("out/gg_ld_ecoreg.feather")
+  write_feather("out-shiny/gg_ld_ecoreg.feather")
 
 ld_bec_simp_more <- ms_simplify(ld_bec_simp, keep = 0.05, keep_shapes = TRUE) %>%
   fix_geo_problems()
@@ -252,7 +253,7 @@ ld_bec_simp_more <- ms_simplify(ld_bec_simp, keep = 0.05, keep_shapes = TRUE) %>
 gg_ld_bec <- gg_fortify(ld_bec_simp_more) %>%
   rename(ZONE = zone) %>%
   select(-rmapshaperid) %>%
-  write_feather("out/gg_ld_bec.feather")
+  write_feather("out-shiny/gg_ld_bec.feather")
 
 ##############
 
