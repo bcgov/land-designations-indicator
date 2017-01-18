@@ -1,42 +1,19 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+<a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="http://bcdevexchange.org/badge/2.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a>
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+------------------------------------------------------------------------
 
-```{r echo=FALSE, results='asis'}
-envreportutils::devex_badge("exploration")
-```
+Analysis of land designations that contribute to conservation
+=============================================================
 
----
+### Project Status
 
-# Analysis of land designations that contribute to conservation
-
-This repository contains R code that calculates summaries of the amount of land 
-designated in B.C. that contributes to conservation. It supports this 
-[Environmental Reporting BC indicator]().
-
-## Usage
-Source data is obtained by running the script [here](https://github.com/bcgov/conservationlands)
-The outputs from that script should be:
-
-- `land-designations.gdb`
-- `land_bec.gdb`
-- `lands_ecosections.gdb`
-
-Place these in the `data` folder of this repository. Run the `01_clean.R` file to 
-prepare the data, and the `02_analysis.R` file to calculate the summaries.
-
-The outputs are for use in the [land designations Shiny app](https://github.com/bcgov/land-designations-shinyapp).
+This is a very early exploration, using mock data, for an SoE indicator.
 
 ### Pathway to open source
 
-Once the data are available, this repo will be moved to the bcgov org and 
-developed in the open.
+Once the data are available, this repo will be moved to the bcgov org and developed in the open.
 
 ### Getting Help or Reporting an Issue
 
