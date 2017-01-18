@@ -19,9 +19,9 @@ library(geojsonio)
 library(rmapshaper)
 library(feather)
 library(readr)
-
 library(dplyr)
-library(sf)
+library(tidyr)
+# library(sf)
 
 source("fun.R")
 
@@ -125,7 +125,7 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
 ## Get full land designations file
 ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
-  ld <- readOGR("data/conservationlands.gdb", stringsAsFactors = FALSE) %>%
+  ld <- readOGR("data/land_designations.gdb", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
   ld_t <- ld[ld$bc_boundary == "bc_boundary_land_tiled" &
                ld$category != "" & !is.na(ld$category), ] %>%
@@ -179,18 +179,18 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
 })
 
 ## Load Ecosections x land designations (using sf)
-eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
-eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
-  eco_ld_t <- st_read("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
-    filter(bc_boundary == "bc_boundary_land_tiled",
-           !is.na(category),
-           category != "") %>%
-    select(eco_ld_t, designation, map_tile, category, parent_ecoregion_code,
-           ecosection_name, ecosection_code, shape_area, SHAPE) %>%
-    fix_geo_problems()
-  saveRDS(eco_ld_t, eco_ld_sf_rds)
-  eco_ld_t
-})
+# eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
+# eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
+#   eco_ld_t <- st_read("data/lands_ecosections.gdb", stringsAsFactors = FALSE) %>%
+#     filter(bc_boundary == "bc_boundary_land_tiled",
+#            !is.na(category),
+#            category != "") %>%
+#     select(eco_ld_t, designation, map_tile, category, parent_ecoregion_code,
+#            ecosection_name, ecosection_code, shape_area, SHAPE) %>%
+#     fix_geo_problems()
+#   saveRDS(eco_ld_t, eco_ld_sf_rds)
+#   eco_ld_t
+# })
 
 eco_ld_rds <- "tmp/eco_ld.rds"
 eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
@@ -260,16 +260,3 @@ gg_ld_bec <- gg_fortify(ld_bec_simp_more) %>%
   rename(ZONE = zone) %>%
   select(-rmapshaperid) %>%
   write_feather("out-shiny/gg_ld_bec.feather")
-
-##############
-
-library(ggplot2)
-library(ggpolypath)
-
-ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
-  geom_polypath(aes(fill = category)) +
-  coord_fixed()
-
-ggplot(gg_ld_ecoreg, aes(x = long, y = lat, group = group)) +
-  geom_polypath(aes(fill = category)) +
-  coord_fixed()
