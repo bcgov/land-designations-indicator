@@ -192,17 +192,23 @@ eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
   eco_ld_t
 })
 
-eco_ld_rds <- "tmp/eco_ld_t.rds"
-eco_ld_t <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
+eco_ld_rds <- "tmp/eco_ld.rds"
+eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
   eco_ld <- readOGR("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
+  saveRDS(eco_ld, eco_ld_rds)
+  eco_ld
+})
+
+eco_ld_t_rds <- "tmp/eco_ld_t.rds"
+eco_ld_t <- tryCatch(readRDS(eco_ld_t_rds), error = function(e) {
   eco_ld_t <- eco_ld[eco_ld$bc_boundary == "bc_boundary_land_tiled" &
                        eco_ld$category != "" & !is.na(eco_ld$category),
                      c("designation", "map_tile", "category",
                        "parent_ecoregion_code", "ecosection_name",
                        "ecosection_code", "shape_area")] %>%
     fix_geo_problems()
-  saveRDS(eco_ld_t, eco_ld_rds)
+  saveRDS(eco_ld_t, eco_ld_t_rds)
   eco_ld_t
 })
 
@@ -267,22 +273,3 @@ ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
 ggplot(gg_ld_ecoreg, aes(x = long, y = lat, group = group)) +
   geom_polypath(aes(fill = category)) +
   coord_fixed()
-
-cat_summary <- bec_ld_t@data %>%
-  group_by(category) %>%
-  summarize(area_prot_ha = sum(shape_area) * 1e-4) %>%
-  mutate(percent_prot = (area_prot_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
-  arrange(category) %>%
-  write_csv("out/designation_categories_summary.csv")
-
-bec_zone_cat_summary <- bec_ld_t@data %>%
-  group_by(zone, category) %>%
-  summarize(area_designated_ha = sum(shape_area) * 1e-4) %>%
-  left_join(bec_zone@data, by = c("zone" = "ZONE")) %>%
-  mutate(zone_area_ha = area * 1e-4,
-         percent_designated = area_designated_ha / zone_area_ha * 100) %>%
-  select(-area) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
-  arrange(zone, category) %>%
-  write_csv("out/designation_categories_by_bec_zone.csv")
