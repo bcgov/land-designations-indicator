@@ -244,7 +244,7 @@ ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
   ld_ecoreg_simp
 })
 
-## Simplify lx ecoregion and ld x bec more, fortify for use with ggplot, and write out
+## Simplify ld x ecoregion and ld x bec more, fortify for use with ggplot, and write out
 ld_ecoreg_simp_more <- ms_simplify(ld_ecoreg_simp, keep = 0.05, keep_shapes = TRUE) %>%
   fix_geo_problems()
 
