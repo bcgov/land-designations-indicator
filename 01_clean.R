@@ -26,6 +26,7 @@ library(tidyr)
 source("fun.R")
 
 dir.create("tmp", showWarnings = FALSE)
+dir.create("out", showWarnings = FALSE)
 dir.create("out-shiny", showWarnings = FALSE)
 
 bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
