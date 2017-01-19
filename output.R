@@ -47,15 +47,15 @@ rollup_category <- function(category) {
 ##roll-up two protected categories
 bgc$rollup <- rollup_category(bgc$category)
 
-##facet labels
-# lab <- c("04_Managed" = "Managed Areas",
-#                 "03_Exclude_1_2_Activities" = "Exclude 1 or 2 Activities",
-#                 "Prot" = "Protected Lands")
+#facet labels
+lab <- c("04_Managed" = "Managed Areas",
+         "03_Exclude_1_2_Activities" = "Exclude 1 or 2 Activities",
+         "Prot" = "Protected Lands")
 
 ##facet plot
 facetplot <- ggplot(bgc, aes(x = ZONE, y = percent_designated, fill = category)) +
   geom_col() +
-  facet_wrap(~rollup, nrow=3) +
+  facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
   scale_fill_manual(values = des_cols) +
  #  coord_flip() +
   labs(x = "Biogeoclimatic Zone\n", y = "Percent Designated") +
