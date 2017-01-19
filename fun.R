@@ -150,3 +150,47 @@ clip_only <- function(x, bc) {
   clipped <- rmapshaper::ms_clip(x[covers, ], bc)
   rbind(x[!covers, ], clipped[, names(x)])
 }
+
+get_latest_release <- function(repo_path) {
+  if (!require(httr)) stop("You need the 'httr' package to use this function", call. = FALSE)
+
+  repo_path <- gsub("^/+|/+$", "", repo_path)
+
+  ret <- GET(paste0("https://api.github.com/repos/", repo_path, "/releases/latest"))
+  stop_for_status(ret)
+  content(ret)
+}
+
+list_release_assets <- function(assets_url) {
+  if (!require(httr)) stop("You need the 'httr' package to use this function", call. = FALSE)
+
+  ret <- GET(assets_url)
+  stop_for_status(ret)
+  content(ret)
+}
+
+get_asset <- function(asset, overwrite = TRUE) {
+  if (!require(httr)) stop("You need the 'httr' package to use this function", call. = FALSE)
+
+  ret <- GET(asset$url, write_disk(paste0("data/",asset$name), overwrite = overwrite), progress())
+  stop_for_status(ret)
+  ret
+}
+
+download_assets <- function(assets, dest_dir = "data", overwrite = TRUE) {
+  ret <- lapply(assets, get_asset, overwrite = overwrite)
+
+  if (length(ret) == 1L) return(ret[[1]])
+  ret
+}
+
+list_asset_files <- function(assets) {
+  vapply(assets, function(x) x$content, FUN.VALUE = character(1))
+}
+
+get_data <- function(repo = "bcgov/land-designations-indicator", dest_dir = "data", overwrite = TRUE) {
+  the_release <- get_latest_release(repo_path = repo)
+  the_assets <- list_release_assets(the_release$assets_url)
+  asset_files <- download_assets(the_assets, overwrite = overwrite)
+  list_asset_files(asset_files)
+}
