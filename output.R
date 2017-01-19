@@ -56,10 +56,10 @@ lab <- c("04_Managed" = "Managed Areas",
 facetplot <- ggplot(bgc, aes(x = ZONE, y = percent_designated, fill = category)) +
   geom_col() +
   facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
-  scale_fill_manual(values = des_cols) +
- #  coord_flip() +
+  scale_fill_manual(values = des_cols, guide =FALSE) +
+   coord_flip() +
   labs(x = "Biogeoclimatic Zone\n", y = "Percent Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 80, 10), limits = c(0, 80)) +
+  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 70, 10), limits = c(0, 70)) +
   theme_soe_facet() +
   theme(panel.grid.major.y = element_line(colour = "grey90"),
         panel.grid.minor.y = element_line(colour = "grey90"),
