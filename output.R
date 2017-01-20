@@ -66,7 +66,7 @@ bgc$rollup <- rollup_category(bgc$category)
 
 #facet labels
 lab <- c("04_Managed" = "Managed Areas",
-         "03_Exclude_1_2_Activities" = "Exclude 1 or 2 Activities",
+         "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
          "Prot" = "Protected Lands")
 
 bgc <- bgc  %>%
