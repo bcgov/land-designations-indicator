@@ -85,12 +85,15 @@ facetplot <- ggplot(bgc, aes(x = bec_nms, y = percent_designated, fill = categor
         panel.grid.minor.x = element_line(colour = "grey90"),
         panel.grid.major.y = element_blank(),
         strip.placement = "top",
+        strip.text.x = element_text(size = 13),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 11),
         plot.margin = unit(c(2,2,1,1), "lines"))
 plot(facetplot)
 
 ## print facet plot to PNG
 png(filename = "out/bgc_facet_plot.png",
-    width = 900, height = 600, units = "px")
+    width = 900, height = 700, units = "px")
 facetplot
 dev.off()
 
