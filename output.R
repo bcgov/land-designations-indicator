@@ -51,9 +51,9 @@ bcsum$rollup <- rollup_category(bcsum$category)
 
 ## category labels for legend
 cat_labels <- c("01_PPA" = "Parks & Protected Areas",
-                "02_Protected_Other" = "Other Protected Lands",
-                "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
-                "04_Managed" = "Managed Areas")
+                "02_Protected_Other" = "Other Protected Lands")
+                # "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
+                # "04_Managed" = "Managed Areas")
 
 ## setting factors for ordering bars
 bcsum$category <- factor(bcsum$category, levels = c("04_Managed",
@@ -63,11 +63,11 @@ bcsum$category <- factor(bcsum$category, levels = c("04_Managed",
 ## bc summary bar plot
 bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
   geom_col() +
-  scale_fill_manual(name = "", values = des_cols, labels = cat_labels) +
+  scale_fill_manual(breaks = c("01_PPA","02_Protected_Other"), values = des_cols, labels = cat_labels) +
   scale_x_discrete(labels = c("04_Managed" = "Managed\nAreas",
-                              "03_Exclude_1_2_Activities" = "Resource Exclusion\nAreas",
+                              "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
                               "Prot" = "Protected\nLands")) +
-  guides(fill = guide_legend(reverse = TRUE)) +
+  guides(fill = guide_legend(title = NULL)) +
   coord_flip() +
   labs(x = "", y = "Percent of British Columbia Designated") +
   scale_y_continuous(expand = c(0, 0), breaks = seq(0, 25, 5), limits = c(0, 25)) +
@@ -75,9 +75,9 @@ bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
   theme(panel.grid.major.x = element_line(colour = "grey90"),
         panel.grid.minor.x = element_line(colour = "grey90"),
         panel.grid.major.y = element_blank(),
-        legend.position = "bottom",
-        legend.direction = "vertical",
-   #    legend.position = c(.85, .72),
+       legend.position = "top",
+    #    legend.direction = "vertical",
+  #     legend.position = c(.85, .72),
         legend.background = element_blank(),
         legend.text = element_text(size = 12),
         axis.title = element_text(size = 14),
