@@ -14,6 +14,8 @@ library(ggplot2)
 library(ggpolypath)
 library(envreportutils) #theme_soe_facet
 library(magrittr) # %>%
+library(feather) #read in feather file
+library(ggthemes)
 
 files_list <- list.files("out-shiny", full.names = TRUE)
 file.copy(from = files_list, to = "../land-designations-shinyapp/app/data", overwrite = TRUE)
@@ -33,6 +35,29 @@ des_cols <- c("01_PPA"                    = "#00441b",
               "02_Protected_Other"        = "#006d2c",
               "03_Exclude_1_2_Activities" = "#a6d96a",
               "04_Managed"                = "#fdbf6f")
+
+
+## Static BC Sumamry map
+
+## read in datafiles
+ld_df <- read_feather("out-shiny/gg_ld_ecoreg.feather")
+bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
+
+ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
+  geom_polypath(data = bc_map, fill = "grey80", colour = "gray80") +
+  geom_polypath(aes(fill = category)) +
+  scale_fill_manual(values = des_cols) +
+  coord_fixed(expand = FALSE) +
+  theme_map() +
+  guides(fill = "none")
+plot(ld_map)
+
+
+## print BC Summary map to PNG
+png(filename = "out/bc_ld_map.png",
+    width = 500, height = 500, units = "px")
+ld_map
+dev.off()
 
 ## function to roll-up the two protected (sub)categories
 rollup_category <- function(category) {
@@ -153,63 +178,111 @@ png(filename = "out/bgc_facet_plot.png",
 bgcfacetplot
 dev.off()
 
-## Static facet bar chart for summary by ecoregion and category
-##read in datafile
-ecoregions <- read.csv("out/bc_ecoregions_land_designations_summary.csv", stringsAsFactors = FALSE)
-
-## Adding full BGC names to dataframe
-bgc$bec_nms <- bgc$ZONE
-bgc$bec_nms[bgc$bec_nms == "BAFA"] <- "Boreal Altai Fescue Alpine"
-bgc$bec_nms[bgc$bec_nms == "SWB"] <- "Spruce—Willow—Birch"
-bgc$bec_nms[bgc$bec_nms == "BWBS"] <- "Boreal White & Black Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "ESSF"] <- "Engelmann Spruce—Subalpine Fir"
-bgc$bec_nms[bgc$bec_nms == "CMA"] <- "Coastal Mountain-heather Alpine"
-bgc$bec_nms[bgc$bec_nms ==  "SBS"] <-  "Sub-Boreal Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "MH"] <-  "Mountain Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "CWH"] <- "Coastal Western Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "ICH"] <- "Interior Cedar—Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "IMA"] <- "Interior Mountain-heather Alpine"
-bgc$bec_nms[bgc$bec_nms ==  "SBPS"] <- "Sub-Boreal Pine—Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "MS"] <- "Montane Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "IDF"] <- "Interior Douglas-fir"
-bgc$bec_nms[bgc$bec_nms ==  "BG"] <- "Bunchgrass"
-bgc$bec_nms[bgc$bec_nms ==  "PP"] <- "Ponderosa Pine"
-bgc$bec_nms[bgc$bec_nms ==  "CDF"] <- "Coastal Douglas-fir"
-
-
-##roll-up two protected categories
-bgc$rollup <- rollup_category(bgc$category)
-
-#facet labels
-lab <- c("04_Managed" = "Managed Areas",
-         "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
-         "Prot" = "Protected Lands")
-
-bgc <- bgc  %>%
-  order_df("bec_nms", "percent_designated", fun = max)
-
-##facet plot
-facetplot <- ggplot(bgc, aes(x = bec_nms, y = percent_designated, fill = category)) +
-  geom_col() +
-  facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
-  scale_fill_manual(values = des_cols, guide =FALSE) +
-  coord_flip() +
-  labs(x = "Biogeoclimatic Zone\n", y = "Percent Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 65, 5), limits = c(0, 65)) +
-  theme_soe_facet() +
-  theme(panel.grid.major.x = element_line(colour = "grey90"),
-        panel.grid.minor.x = element_line(colour = "grey90"),
-        panel.grid.major.y = element_blank(),
-        strip.placement = "top",
-        strip.text.x = element_text(size = 13),
-        axis.title = element_text(size = 14),
-        axis.text = element_text(size = 11),
-        plot.margin = unit(c(2,2,1,1), "lines"))
-plot(facetplot)
-
-## print facet plot to PNG
-png(filename = "out/bgc_facet_plot.png",
-    width = 900, height = 700, units = "px")
-facetplot
-dev.off()
-
+# ## Static facet bar chart for summary by ecoregion and category
+# ##read in datafile
+# eco <- read.csv("out/bc_ecoregions_land_designations_summary.csv", stringsAsFactors = FALSE)
+#
+# ## Adding full Ecoregion names to dataframe
+# eco$eco_nms <- eco$ecoregion_code
+# bgc$bec_nms[bgc$bec_nms == "BAFA"] <- "Boreal Altai Fescue Alpine"
+# bgc$bec_nms[bgc$bec_nms == "SWB"] <- "Spruce—Willow—Birch"
+# bgc$bec_nms[bgc$bec_nms == "BWBS"] <- "Boreal White & Black Spruce"
+# bgc$bec_nms[bgc$bec_nms ==  "ESSF"] <- "Engelmann Spruce—Subalpine Fir"
+# bgc$bec_nms[bgc$bec_nms == "CMA"] <- "Coastal Mountain-heather Alpine"
+# bgc$bec_nms[bgc$bec_nms ==  "SBS"] <-  "Sub-Boreal Spruce"
+# bgc$bec_nms[bgc$bec_nms ==  "MH"] <-  "Mountain Hemlock"
+# bgc$bec_nms[bgc$bec_nms ==  "CWH"] <- "Coastal Western Hemlock"
+# bgc$bec_nms[bgc$bec_nms ==  "ICH"] <- "Interior Cedar—Hemlock"
+# bgc$bec_nms[bgc$bec_nms ==  "IMA"] <- "Interior Mountain-heather Alpine"
+# bgc$bec_nms[bgc$bec_nms ==  "SBPS"] <- "Sub-Boreal Pine—Spruce"
+# bgc$bec_nms[bgc$bec_nms ==  "MS"] <- "Montane Spruce"
+# bgc$bec_nms[bgc$bec_nms ==  "IDF"] <- "Interior Douglas-fir"
+# bgc$bec_nms[bgc$bec_nms ==  "BG"] <- "Bunchgrass"
+# bgc$bec_nms[bgc$bec_nms ==  "PP"] <- "Ponderosa Pine"
+# bgc$bec_nms[bgc$bec_nms ==  "CDF"] <- "Coastal Douglas-fir"
+#
+# TPC = "Transitional Pacific",
+# HCS = "Hecate Continental Shelf",
+# COG = "Coastal Gap",
+# EHM = "Eastern Hazelton Mountains",
+# OPS = "Outer Pacific Shelf",
+# NRM = "Northern Canadian Rocky Mountains",
+# OKH = "Okanogan Highland",
+# CMI = "Chugach Mountains and Icefields",
+# STE = "St Elias Mountains",
+# BOU = "Boundary Ranges",
+# YSL = "Yukon Southern Lakes",
+# NUP = "Northern Alberta Upland",
+# PEM = "Pelly Mountains",
+# LIB = "Liard Basin",
+# HHI = "Hyland Highland",
+# HSL = "Hay-Slave Lowland",
+# BMP = "Boreal Mountains and Plateaus",
+# MPL = "Muskwa Plateau",
+# CAU = "Central Alberta Upland",
+# CRM = "Central Canadian Rocky Mountains",
+# PRB = "Peace River Basin",
+# OMM = "Omineca Mountains",
+# SKM = "Skeena Mountains",
+# FAB = "Fraser Basin",
+# NRA = "Nass Ranges",
+# SBC = "Sub-Arctic Pacific",
+# FAP = "Fraser Plateau",
+# WRA = "Western Continental Ranges",
+# GWH = "Gwaii Haanas",
+# CHR = "Chilcotin Ranges",
+# SRT = "Southern Rocky Mountain Trench",
+# IPS = "Inner Pacific Shelf",
+# ITR = "Interior Transition Ranges",
+# PAC = "Pacific Ranges",
+# TOP = "Thompson-Okanagan Plateau",
+# NCM = "Northern Columbia Mountains",
+# NCR = "Northern Cascade Ranges",
+# EVI = "Eastern Vancouver Island",
+# PTR = "Purcell Transitional Ranges",
+# NCD = "Northern Continental Divide",
+# LOM = "Lower Mainland",
+# WVI = "Western Vancouver Island",
+# GPB = "Georgia-Puget Basin",
+# YSH = "Yukon-Stikine Highlands",
+# COH = "Columbia Highlands",
+# SBF = "Selkirk-Bitterroot Foothills",
+# SAU = "Southern Alberta Upland",
+# ECR = "Eastern Continental Ranges"
+#
+# ##roll-up two protected categories
+# bgc$rollup <- rollup_category(bgc$category)
+#
+# #facet labels
+# lab <- c("04_Managed" = "Managed Areas",
+#          "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
+#          "Prot" = "Protected Lands")
+#
+# bgc <- bgc  %>%
+#   order_df("bec_nms", "percent_designated", fun = max)
+#
+# ##facet plot
+# facetplot <- ggplot(bgc, aes(x = bec_nms, y = percent_designated, fill = category)) +
+#   geom_col() +
+#   facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
+#   scale_fill_manual(values = des_cols, guide =FALSE) +
+#   coord_flip() +
+#   labs(x = "Biogeoclimatic Zone\n", y = "Percent Designated") +
+#   scale_y_continuous(expand = c(0, 0), breaks = seq(0, 65, 5), limits = c(0, 65)) +
+#   theme_soe_facet() +
+#   theme(panel.grid.major.x = element_line(colour = "grey90"),
+#         panel.grid.minor.x = element_line(colour = "grey90"),
+#         panel.grid.major.y = element_blank(),
+#         strip.placement = "top",
+#         strip.text.x = element_text(size = 13),
+#         axis.title = element_text(size = 14),
+#         axis.text = element_text(size = 11),
+#         plot.margin = unit(c(2,2,1,1), "lines"))
+# plot(facetplot)
+#
+# ## print facet plot to PNG
+# png(filename = "out/bgc_facet_plot.png",
+#     width = 900, height = 700, units = "px")
+# facetplot
+# dev.off()
+#
