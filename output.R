@@ -253,11 +253,11 @@ eco <- eco  %>%
 ##ecoregion facet plot
 ecofacetplot <- ggplot(eco, aes(x = eco_nms, y = percent_des, fill = category)) +
   geom_col() +
-  facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
+  facet_wrap(~rollup, nrow=1, labeller = labeller(rollup = lab)) +
   scale_fill_manual(values = des_cols, guide =FALSE) +
   coord_flip() +
   labs(x = "Ecoregion\n", y = "Percent Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 100, 10), limits = c(0, 100)) +
+  scale_y_continuous(expand = c(0, 0), breaks = seq(20, 100, 20), limits = c(0, 100)) +
   theme_soe_facet() +
   theme(panel.grid.major.x = element_line(colour = "grey90"),
         panel.grid.minor.x = element_line(colour = "grey90"),
@@ -271,7 +271,7 @@ plot(ecofacetplot)
 
 ## print facet plot to PNG
 png(filename = "out/ecoregion_facet_plot.png",
-    width = 900, height = 1100, units = "px")
+    width = 900, height = 700, units = "px")
 ecofacetplot
 dev.off()
 
