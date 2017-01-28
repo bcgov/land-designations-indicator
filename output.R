@@ -92,7 +92,7 @@ bcsum$category <- factor(bcsum$category, levels = c("04_Managed",
                                                     "01_PPA"))
 ## bc summary bar plot
 bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
-  geom_col() +
+  geom_col(width = .6) +
   scale_fill_manual(breaks = c("01_PPA","02_Protected_Other"), values = des_cols, labels = cat_labels) +
   scale_x_discrete(labels = c("04_Managed" = "Managed\nAreas",
                               "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
@@ -112,7 +112,7 @@ bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
         legend.text = element_text(size = 12),
         axis.title = element_text(size = 14),
        axis.text = element_text(size = 12),
-       plot.margin = unit(c(2,3,1,1), "lines"))
+       plot.margin = unit(c(3,3,2,1), "lines"))
 plot(bcsumplot)
 
 ## print BC Summary plot to PNG
