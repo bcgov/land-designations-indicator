@@ -94,7 +94,7 @@ bcsum$category <- factor(bcsum$category, levels = c("04_Managed",
 bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
   geom_col(width = .6) +
   scale_fill_manual(breaks = c("01_PPA","02_Protected_Other"), values = des_cols, labels = cat_labels) +
-  scale_x_discrete(labels = c("04_Managed" = "Managed\nAreas",
+  scale_x_discrete(labels = c("04_Managed" = "Spatially\nManaged\nAreas",
                               "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
                               "Prot" = "Protected\nLands")) +
   guides(fill = guide_legend(title = NULL)) +
@@ -150,7 +150,7 @@ bgc$bec_nms[bgc$bec_nms ==  "CDF"] <- "Coastal Douglas-fir"
 bgc$rollup <- rollup_category(bgc$category)
 
 #facet labels
-lab <- c("04_Managed" = "Managed Areas",
+lab <- c("04_Managed" = "Spatially Managed Areas",
          "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
          "Prot" = "Protected Lands")
 
@@ -243,7 +243,7 @@ eco$eco_nms[eco$eco_nms == "ECR"] <- "Eastern Continental Ranges"
 eco$rollup <- rollup_category(eco$category)
 
 #facet labels
-lab <- c("04_Managed" = "Managed Areas",
+lab <- c("04_Managed" = "Spatially Managed Areas",
          "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
          "Prot" = "Protected Lands")
 
