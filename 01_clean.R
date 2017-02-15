@@ -126,7 +126,7 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
 ## Get full land designations file
 ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
-  ld <- readOGR("data/land_designations.gdb", stringsAsFactors = FALSE) %>%
+  ld <- readOGR("data/land_designations.gpkg", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
   ld_t <- ld[ld$bc_boundary == "bc_boundary_land_tiled" &
                ld$category != "" & !is.na(ld$category), ] %>%
@@ -139,11 +139,12 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
 ## Load BEC x land designations
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
-  bec_ld <- readOGR("data/lands_bec.gdb", stringsAsFactors = FALSE) %>%
+  bec_ld <- readOGR("data/lands_bec.gpkg", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
   bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled" &
                        bec_ld$category != "" & !is.na(bec_ld$category), ] %>%
     fix_geo_problems()
+  bec_ld_t$calc_area <- rgeos::gArea(bec_ld_t, byid = TRUE)
   saveRDS(bec_ld_t, bec_ld_rds)
   bec_ld_t
 })
@@ -195,7 +196,7 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
 
 eco_ld_rds <- "tmp/eco_ld.rds"
 eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
-  eco_ld <- readOGR("data/lands_eco.gdb", stringsAsFactors = FALSE) %>%
+  eco_ld <- readOGR("data/lands_eco.gpkg", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
   saveRDS(eco_ld, eco_ld_rds)
   eco_ld
@@ -209,6 +210,7 @@ eco_ld_t <- tryCatch(readRDS(eco_ld_t_rds), error = function(e) {
                        "parent_ecoregion_code", "ecosection_name",
                        "ecosection_code", "shape_area")] %>%
     fix_geo_problems()
+  eco_ld_t$calc_area <- rgeos::gArea(eco_ld_t, byid = TRUE)
   saveRDS(eco_ld_t, eco_ld_t_rds)
   eco_ld_t
 })

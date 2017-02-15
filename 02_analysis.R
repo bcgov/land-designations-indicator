@@ -34,7 +34,7 @@ bc_ld_summary <- ld_t@data %>%
 
 bec_cat_summary <- bec_ld_t@data %>%
   group_by(map_label, category = factor(category)) %>%
-  summarize(area_des = sum(shape_area, na.rm = TRUE)) %>%
+  summarize(area_des = sum(calc_area, na.rm = TRUE)) %>%
   right_join(group_by(bec_t@data, MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
                       VARIANT, VARIANT_NAME) %>%
                summarize(bec_area = sum(bec_area, na.rm = TRUE)),
