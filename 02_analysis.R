@@ -68,7 +68,7 @@ bec_zone_sizes <- bec_t@data %>%
 ecosec_sizes <- eco_ld@data %>%
   filter(bc_boundary == "bc_boundary_land_tiled") %>%
   group_by(parent_ecoregion_code, ecosection_name, ecosection_code) %>%
-  summarize(ecosec_area = sum(shape_area, na.rm = TRUE))
+  summarize(ecosec_area = max(shape_area, na.rm = TRUE))
 
 ecoreg_sizes <- ecosec_sizes %>%
   group_by(ecoregion_code = parent_ecoregion_code) %>%
@@ -78,7 +78,7 @@ ecosection_cat_summary <- eco_ld_t@data %>%
   right_join(ecosec_sizes, by = c("parent_ecoregion_code", "ecosection_name", "ecosection_code")) %>%
   complete(nesting(parent_ecoregion_code, ecosection_name, ecosection_code, ecosec_area), category) %>%
   group_by(category, parent_ecoregion_code, ecosection_name, ecosection_code) %>%
-  summarize(area_des = sum(shape_area, na.rm = TRUE),
+  summarize(area_des = sum(calc_area, na.rm = TRUE),
             ecosec_area = sum(ecosec_area, na.rm = TRUE),
             percent_des = area_des / ecosec_area * 100,
             area_des_ha = area_des * 1e-4) %>%
