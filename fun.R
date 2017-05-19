@@ -139,6 +139,10 @@ combine_spatial_list <- function(splist, ...) {
 #'
 #' @examples
 clip_only <- function(x, bc) {
+  UseMethod("clip_only")
+}
+
+clip_only.Spatial <- function(x, bc) {
   ## First check if there are any that are completely outside and ditch if so:
   intersects <- rgeos::gIntersects(x, bc, byid = TRUE, returnDense = TRUE)
   intersects <- as.logical(colSums(intersects))
@@ -149,6 +153,25 @@ clip_only <- function(x, bc) {
   covers <- as.logical(colSums(covers))
   clipped <- rmapshaper::ms_clip(x[covers, ], bc)
   rbind(x[!covers, ], clipped[, names(x)])
+}
+
+#' @importFrom sf st_intersects st_covered_by
+clip_only.sf <- function(x, bc) {
+  ## First check if there are any that are completely outside and ditch if so:
+  intersects <- sf::st_intersects(x, bc, sparse = FALSE)
+  intersects <- as.logical(rowSums(intersects))
+  x <- x[intersects, ]
+
+  # Find the features in x that are not fully covered by the boundary
+  covers <- sf::st_covered_by(bc, x, sparse = FALSE)
+  covers <- as.logical(colSums(covers))
+  clipped <- rmapshaper::ms_clip(geojsonio::geojson_json(x[covers, ]),
+                                 geojsonio::geojson_json(bc))
+  clipped <- st_read(clipped, stringsAsFactors = FALSE,
+                     quiet = TRUE, crs = st_crs(x)[[2]])
+  names(clipped)[names(clipped) == attr(clipped, "sf_column")] <- attr(x, "sf_column")
+  attr(clipped, "sf_column") <- attr(x, "sf_column")
+  rbind(x[!covers, ], clipped[, setdiff(names(clipped), "rmapshaperid")])
 }
 
 get_latest_release <- function(repo_path) {
