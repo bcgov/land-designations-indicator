@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
-library(rgdal)
-library(sp)
-library(rgeos)
-library(raster)
+# library(rgdal)
+# library(sp)
+# library(rgeos)
+# library(raster)
 library(bcmaps)
 library(geojsonio)
 library(rmapshaper)
@@ -21,7 +21,7 @@ library(feather)
 library(readr)
 library(dplyr)
 library(tidyr)
-# library(sf)
+library(sf)
 
 source("fun.R")
 
@@ -31,7 +31,7 @@ dir.create("out-shiny", showWarnings = FALSE)
 
 bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
 bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
-  bc_bound_trim <- readOGR("data/BC_Boundary.gdb", stringsAsFactors = FALSE)
+  bc_bound_trim <- st_read("data/BC_Boundary.gdb", stringsAsFactors = FALSE)
   bc_bound_trim <- transform_bc_albers(bc_bound_trim)
   saveRDS(bc_bound_trim, bc_bound_trim_rds)
   bc_bound_trim
@@ -49,10 +49,10 @@ bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(
 ecoreg_t_rds <- "tmp/ecoreg_t.rds"
 ecoregions_t <- tryCatch(readRDS(ecoreg_t_rds), error = function(e) {
   m_ecoregions <- c("HCS", "IPS", "OPS", "SBC", "TPC")
-  eco_t <- clip_only(ecoregions[!ecoregions$CRGNCD %in% m_ecoregions,],
+  eco_t <- st_intersection(st_as_sf(ecoregions[!ecoregions$CRGNCD %in% m_ecoregions,]),
                      bc_bound_trim)
   eco_t <- fix_geo_problems(eco_t)
-  eco_t$ecoreg_area <- gArea(eco_t, byid = TRUE)
+  eco_t$ecoreg_area <- st_area(eco_t)
   saveRDS(eco_t, file = ecoreg_t_rds)
   eco_t
 })
@@ -66,16 +66,18 @@ ecoregions_t_simp <- tryCatch(readRDS(ecoregions_t_simp_rds), error = function(e
   eco_t_simp
 })
 
-gg_ecoreg <- gg_fortify(ecoregions_t_simp) %>% write_feather("out-shiny/gg_ecoreg.feather")
+gg_ecoreg <- gg_fortify(as(ecoregions_t_simp, "Spatial")) %>% write_feather("out-shiny/gg_ecoreg.feather")
 
 eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
 ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
-  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
+  eco_t_simp_leaflet <- geojson_json(ecoregions_t[,c("CRGNCD", "CRGNNM")]) %>%
+    ms_simplify(0.003) %>%
+    st_read() %>%
     fix_geo_problems() %>%
-    spTransform(CRSobj = CRS("+init=epsg:4326"))
-  eco_t_simp_leaflet$CRGNCD <- as.character(ecoregions_t_simp_leaflet$CRGNCD)
-  eco_t_simp_leaflet$CRGNNM <- tools::toTitleCase(tolower(as.character(ecoregions_t_simp_leaflet$CRGNNM)))
-  eco_t_simp_leaflet$rmapshaperid <- NULL
+    st_transform(4326) %>%
+    mutate(CRGNCD <- as.character(CRGNCD),
+           CRGNNM <- tools::toTitleCase(tolower(as.character(CRGNNM)))) %>%
+    select(-rmapshaperid)
   saveRDS(ecoregions_t_simp_leaflet, eco_leaflet_rds)
   eco_t_simp_leaflet
 })
@@ -83,20 +85,20 @@ ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function
 ## Clip bgc to BC boundary
 bec_t_rds <- "tmp/bec_t.rds"
 bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
-  bgc <- readOGR("data/BEC_BIOGEOCLIMATIC_POLY.gdb", stringsAsFactors = FALSE)
+  bgc <- st_read("data/BEC_BIOGEOCLIMATIC_POLY.gdb", stringsAsFactors = FALSE)
   bgc <- transform_bc_albers(bgc)
-  bec_t <- clip_only(bgc, bc_bound_trim)
+  bgc_t <- clip_only(bgc, bc_bound_sf)
   bec_t <- fix_geo_problems(bec_t)
-  bec_t$bec_area <- gArea(bec_t, byid = TRUE)
+  bec_t$bec_area <- st_area(bec_t)
   saveRDS(bec_t, file = bec_t_rds)
   bec_t
 })
 
 bec_zone_rds <- "tmp/bec_zone.rds"
 bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
-  bec_zone <- raster::aggregate(bec_t, by = "ZONE") %>%
+  bec_zone <- aggregate(bec_t, by = bec_t$ZONE, FUN = first) %>%
     fix_geo_problems()
-  bec_zone$zone_area <- gArea(bec_zone, byid = TRUE)
+  bec_zone$zone_area <- st_area(bec_zone)
   saveRDS(bec_zone, bec_zone_rds)
   bec_zone
 })
@@ -142,8 +144,8 @@ bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
   bec_ld <- readOGR("data/lands_bec.gpkg", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
   bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled" &
-                       bec_ld$category != "" & !is.na(bec_ld$category), ] %>%
-    fix_geo_problems()
+                       bec_ld$category != "" & !is.na(bec_ld$category), ]
+  bec_ld_t <- fix_geo_problems(bec_ld_t)
   bec_ld_t$calc_area <- rgeos::gArea(bec_ld_t, byid = TRUE)
   saveRDS(bec_ld_t, bec_ld_rds)
   bec_ld_t
@@ -154,16 +156,16 @@ bec_ld_agg_rds <- "tmp/bec_ld_agg.rds"
 bec_ld_agg <- tryCatch(readRDS(bec_ld_agg_rds), error = function(e) {
   bec_ld_agg <- raster::aggregate(bec_ld_t,
                                 by = c("category", "zone", "subzone", "variant",
-                                       "map_label")) %>%
-  fix_geo_problems()
+                                       "map_label"))
+  bec_ld_agg <- fix_geo_problems(bec_ld_agg)
   saveRDS(bec_ld_agg, bec_ld_agg_rds)
   bec_ld_agg
 })
 
 bec_ld_agg_zone_rds <- "tmp/bec_ld_agg_zone.rds"
 bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
-  bec_ld_agg_zone <- raster::aggregate(bec_ld_agg, by = c("zone", "category")) %>%
-    fix_geo_problems()
+  bec_ld_agg_zone <- raster::aggregate(bec_ld_agg, by = c("zone", "category"))
+  bec_ld_agg_zone <- fix_geo_problems(bec_ld_agg_zone)
   saveRDS(bec_ld_agg_zone, bec_ld_agg_zone_rds)
   bec_ld_agg_zone
 })
@@ -220,17 +222,17 @@ ecosec_ld_agg <- tryCatch(readRDS(ecosec_ld_agg_rds), error = function(e) {
   ecosec_ld_agg <- raster::aggregate(eco_ld_t, by = c("category",
                                                    "parent_ecoregion_code",
                                                    "ecosection_name",
-                                                   "ecosection_code")) %>%
-    fix_geo_problems()
+                                                   "ecosection_code"))
+  ecosec_ld_agg <- fix_geo_problems(ecosec_ld_agg)
   saveRDS(ecosec_ld_agg, ecosec_ld_agg_rds)
   ecosec_ld_agg
 })
 
 ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
 ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
-  ecoreg_ld_agg <- raster::aggregate(ecosec_ld_agg, by = c("category",
-                                                      "parent_ecoregion_code")) %>%
-    fix_geo_problems()
+  ecoreg_ld_agg <- raster::aggregate(ecosec_ld_agg_fix, by = c("category",
+                                                      "parent_ecoregion_code"))
+  ecoreg_ld_agg <- fix_geo_problems(ecoreg_ld_agg)
   saveRDS(ecoreg_ld_agg, ecoreg_ld_agg_rds)
   ecoreg_ld_agg
 })
