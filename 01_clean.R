@@ -31,7 +31,7 @@ dir.create("out-shiny", showWarnings = FALSE)
 
 bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
 bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
-  bc_bound_trim <- st_read("data/BC_Boundary.gdb", stringsAsFactors = FALSE)
+  bc_bound_trim <- read_sf("data/BC_Boundary.gdb")
   bc_bound_trim <- transform_bc_albers(bc_bound_trim)
   saveRDS(bc_bound_trim, bc_bound_trim_rds)
   bc_bound_trim
@@ -72,11 +72,11 @@ eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
 ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
   eco_t_simp_leaflet <- geojson_json(ecoregions_t[,c("CRGNCD", "CRGNNM")]) %>%
     ms_simplify(0.003) %>%
-    st_read() %>%
+    read_sf() %>%
     fix_geo_problems() %>%
+    st_set_crs(3005) %>%
     st_transform(4326) %>%
-    mutate(CRGNCD <- as.character(CRGNCD),
-           CRGNNM <- tools::toTitleCase(tolower(as.character(CRGNNM)))) %>%
+    mutate(CRGNNM <- tools::toTitleCase(tolower(as.character(CRGNNM)))) %>%
     select(-rmapshaperid)
   saveRDS(ecoregions_t_simp_leaflet, eco_leaflet_rds)
   eco_t_simp_leaflet
@@ -85,9 +85,9 @@ ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function
 ## Clip bgc to BC boundary
 bec_t_rds <- "tmp/bec_t.rds"
 bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
-  bgc <- st_read("data/BEC_BIOGEOCLIMATIC_POLY.gdb", stringsAsFactors = FALSE)
-  bgc <- transform_bc_albers(bgc)
-  bgc_t <- clip_only(bgc, bc_bound_sf)
+  bec <- read_sf("data/BEC_BIOGEOCLIMATIC_POLY.gdb")
+  bec <- transform_bc_albers(bec)
+  bec_t <- clip_only(bec, bc_bound_trim)
   bec_t <- fix_geo_problems(bec_t)
   bec_t$bec_area <- st_area(bec_t)
   saveRDS(bec_t, file = bec_t_rds)
@@ -96,7 +96,8 @@ bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
 
 bec_zone_rds <- "tmp/bec_zone.rds"
 bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
-  bec_zone <- aggregate(bec_t, by = bec_t$ZONE, FUN = first) %>%
+  bec_zone <- group_by(bec_t, ZONE) %>%
+    summarize() %>%
     fix_geo_problems()
   bec_zone$zone_area <- st_area(bec_zone)
   saveRDS(bec_zone, bec_zone_rds)
@@ -106,14 +107,22 @@ bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
 ## Simplify BEC pologyons for use in display
 bec_zone_simp_rds <- "tmp/bec_zone_simp.rds"
 bec_zone_simp <- tryCatch(readRDS(bec_zone_simp_rds), error = function(e) {
-  bec_zone_simp <- ms_simplify(bec_zone, keep = 0.005) %>%
-    fix_geo_problems()
+  bec_zone$zone_area <- as.numeric(bec_zone$zone_area) ## Of class units, need as numeric
+  bec_zone_simp <- geojson_json(bec_zone) %>%
+    ms_simplify(keep = 0.005) %>%
+    read_sf() %>%
+    fix_geo_problems() %>%
+    st_set_crs(3005) %>%
+    select(-rmapshaperid)
   saveRDS(bec_zone_simp, bec_zone_simp_rds)
   bec_zone_simp
 })
 
-gg_bec <- gg_fortify(bec_zone_simp) %>% write_feather("out-shiny/gg_bec.feather")
+gg_bec <- as(bec_zone_simp, "Spatial") %>%
+  gg_fortify() %>%
+  write_feather("out-shiny/gg_bec.feather")
 
+## Here
 bec_zone_leaflet_rds <- "out-shiny/bec_leaflet.rds"
 bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) {
   bec_zone_leaflet <- ms_simplify(bec_zone_simp, 0.1) %>%
@@ -185,7 +194,7 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
 ## Load Ecosections x land designations (using sf)
 # eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
 # eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
-#   eco_ld_t <- st_read("data/lands_ecosections.gdb", stringsAsFactors = FALSE) %>%
+#   eco_ld_t <- read_sf("data/lands_ecosections.gdb") %>%
 #     filter(bc_boundary == "bc_boundary_land_tiled",
 #            !is.na(category),
 #            category != "") %>%

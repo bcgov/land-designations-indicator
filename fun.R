@@ -87,23 +87,23 @@ mapshaper_apply_sf <- function(sf, column, fun = ms_simplify, ..., parallel = FA
     if (parallel && !require("parallel")) stop("library 'parallel' not available")
 
     sf_list <- split_on_attribute(sf, column)
-    gj_list <- lapply(sf_list, geojson_json)
+    gj_list <- lapply(sf_list, geojsonio::geojson_json)
 
     if (parallel) {
       ## Do the simplification in Parallel:
-      no_cores <- detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
-      cl <- makeCluster(no_cores)
+      no_cores <- parallel::detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
+      cl <- parallel::makeCluster(no_cores)
 
-      on.exit(stopCluster(cl))
+      on.exit(parallel::stopCluster(cl))
 
-      clusterEvalQ(cl, library(rmapshaper))
+      parallel::clusterEvalQ(cl, library(rmapshaper))
 
-      geojson_list_out <- parLapply(cl, gj_list, fun, ...)
+      geojson_list_out <- parallel::parLapply(cl, gj_list, fun, ...)
     } else {
       geojson_list_out <- lapply(gj_list, fun, ...)
     }
 
-    sf_list_out <- lapply(geojson_list_out, st_read)
+    sf_list_out <- lapply(geojson_list_out, sf::read_sf)
 
     if (!recombine) return(sf_list_out)
 
@@ -162,15 +162,22 @@ clip_only.sf <- function(x, bc) {
   intersects <- as.logical(rowSums(intersects))
   x <- x[intersects, ]
 
-  # Find the features in x that are not fully covered by the boundary
+  ## Find the features in x that are not fully covered by the boundary
+  ## and clip them
   covers <- sf::st_covered_by(bc, x, sparse = FALSE)
   covers <- as.logical(colSums(covers))
   clipped <- rmapshaper::ms_clip(geojsonio::geojson_json(x[covers, ]),
                                  geojsonio::geojson_json(bc))
-  clipped <- st_read(clipped, stringsAsFactors = FALSE,
-                     quiet = TRUE, crs = st_crs(x)[[2]])
+  clipped <- sf::read_sf(clipped)
+
+  ## Set the crs of the clipped as it is lost when going through geojson
+  suppressWarnings(sf::st_crs(clipped) <- sf::st_crs(x)[[2]])
+
+  ## Make sure the clipped layer and the non-clipped layer have the
+  ## same geometry column
   names(clipped)[names(clipped) == attr(clipped, "sf_column")] <- attr(x, "sf_column")
   attr(clipped, "sf_column") <- attr(x, "sf_column")
+
   rbind(x[!covers, ], clipped[, setdiff(names(clipped), "rmapshaperid")])
 }
 
