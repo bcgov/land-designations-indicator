@@ -92,9 +92,9 @@ bcsum$category <- factor(bcsum$category, levels = c("04_Managed",
                                                     "01_PPA"))
 ## bc summary bar plot
 bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
-  geom_col() +
+  geom_col(width = .6) +
   scale_fill_manual(breaks = c("01_PPA","02_Protected_Other"), values = des_cols, labels = cat_labels) +
-  scale_x_discrete(labels = c("04_Managed" = "Managed\nAreas",
+  scale_x_discrete(labels = c("04_Managed" = "Spatially\nManaged\nAreas",
                               "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
                               "Prot" = "Protected\nLands")) +
   guides(fill = guide_legend(title = NULL)) +
@@ -112,7 +112,7 @@ bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
         legend.text = element_text(size = 12),
         axis.title = element_text(size = 14),
        axis.text = element_text(size = 12),
-       plot.margin = unit(c(2,3,1,1), "lines"))
+       plot.margin = unit(c(3,3,2,1), "lines"))
 plot(bcsumplot)
 
 ## print BC Summary plot to PNG
@@ -150,7 +150,7 @@ bgc$bec_nms[bgc$bec_nms ==  "CDF"] <- "Coastal Douglas-fir"
 bgc$rollup <- rollup_category(bgc$category)
 
 #facet labels
-lab <- c("04_Managed" = "Managed Areas",
+lab <- c("04_Managed" = "Spatially Managed Areas",
          "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
          "Prot" = "Protected Lands")
 
@@ -243,7 +243,7 @@ eco$eco_nms[eco$eco_nms == "ECR"] <- "Eastern Continental Ranges"
 eco$rollup <- rollup_category(eco$category)
 
 #facet labels
-lab <- c("04_Managed" = "Managed Areas",
+lab <- c("04_Managed" = "Spatially Managed Areas",
          "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
          "Prot" = "Protected Lands")
 
@@ -253,11 +253,11 @@ eco <- eco  %>%
 ##ecoregion facet plot
 ecofacetplot <- ggplot(eco, aes(x = eco_nms, y = percent_des, fill = category)) +
   geom_col() +
-  facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
+  facet_wrap(~rollup, nrow=1, labeller = labeller(rollup = lab)) +
   scale_fill_manual(values = des_cols, guide =FALSE) +
   coord_flip() +
   labs(x = "Ecoregion\n", y = "Percent Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 100, 10), limits = c(0, 100)) +
+  scale_y_continuous(expand = c(0, 0), breaks = seq(20, 100, 20), limits = c(0, 100)) +
   theme_soe_facet() +
   theme(panel.grid.major.x = element_line(colour = "grey90"),
         panel.grid.minor.x = element_line(colour = "grey90"),
@@ -271,7 +271,7 @@ plot(ecofacetplot)
 
 ## print facet plot to PNG
 png(filename = "out/ecoregion_facet_plot.png",
-    width = 900, height = 1100, units = "px")
+    width = 900, height = 700, units = "px")
 ecofacetplot
 dev.off()
 
