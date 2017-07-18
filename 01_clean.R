@@ -122,14 +122,17 @@ gg_bec <- as(bec_zone_simp, "Spatial") %>%
   gg_fortify() %>%
   write_feather("out-shiny/gg_bec.feather")
 
-## Here
+## Further simplification for BEC leaflet map
 bec_zone_leaflet_rds <- "out-shiny/bec_leaflet.rds"
 bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) {
-  bec_zone_leaflet <- ms_simplify(bec_zone_simp, 0.1) %>%
+  bec_zone_leaflet <- geojson_json(bec_zone_simp) %>%
+    ms_simplify(0.1) %>%
+    read_sf() %>%
     fix_geo_problems() %>%
-    spTransform(CRSobj = CRS("+init=epsg:4326"))
+    st_set_crs(3005) %>%
+    select(-rmapshaperid) %>%
+    st_transform(4326)
   bec_zone_leaflet$ZONE <- as.character(bec_zone_leaflet$ZONE)
-  bec_zone_leaflet$rmapshaperid <- NULL
   saveRDS(bec_zone_leaflet, bec_zone_leaflet_rds)
   bec_zone_leaflet
 })
@@ -137,12 +140,12 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
 ## Get full land designations file
 ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
-  ld <- readOGR("data/land_designations.gpkg", stringsAsFactors = FALSE) %>%
-    fix_geo_problems()
-  ld_t <- ld[ld$bc_boundary == "bc_boundary_land_tiled" &
-               ld$category != "" & !is.na(ld$category), ] %>%
-    fix_geo_problems()
-  ld_t$area <- rgeos::gArea(ld_t, byid = TRUE)
+  ld_t <- read_sf("data/designatedlands.gpkg") %>%
+    fix_geo_problems() %>%
+    filter(bc_boundary == "bc_boundary_land_tiled" &
+             category != "" & !is.na(category)) %>%
+    fix_geo_problems() %>%
+    mutate(area = st_area(.))
   saveRDS(ld_t, ld_t_rds)
   ld_t
 })
@@ -150,12 +153,12 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
 ## Load BEC x land designations
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
-  bec_ld <- readOGR("data/lands_bec.gpkg", stringsAsFactors = FALSE) %>%
-    fix_geo_problems()
-  bec_ld_t <- bec_ld[bec_ld$bc_boundary == "bc_boundary_land_tiled" &
-                       bec_ld$category != "" & !is.na(bec_ld$category), ]
-  bec_ld_t <- fix_geo_problems(bec_ld_t)
-  bec_ld_t$calc_area <- rgeos::gArea(bec_ld_t, byid = TRUE)
+  bec_ld_t <- read_sf("data/lands_bec.gpkg") %>%
+    fix_geo_problems() %>%
+    filter(bc_boundary == "bc_boundary_land_tiled" &
+             category != "" & !is.na(category)) %>%
+    fix_geo_problems() %>%
+    mutate(area = st_area(.))
   saveRDS(bec_ld_t, bec_ld_rds)
   bec_ld_t
 })
@@ -163,18 +166,22 @@ bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
 # Make some aggregated and simplified products from bec_ld:
 bec_ld_agg_rds <- "tmp/bec_ld_agg.rds"
 bec_ld_agg <- tryCatch(readRDS(bec_ld_agg_rds), error = function(e) {
-  bec_ld_agg <- raster::aggregate(bec_ld_t,
-                                by = c("category", "zone", "subzone", "variant",
-                                       "map_label"))
+  bec_ld_agg <- group_by(bec_ld_t, category, zone, subzone, variant,
+                                       map_label) %>%
+    summarize(area = sum(area))
   bec_ld_agg <- fix_geo_problems(bec_ld_agg)
   saveRDS(bec_ld_agg, bec_ld_agg_rds)
   bec_ld_agg
 })
 
+## Here
 bec_ld_agg_zone_rds <- "tmp/bec_ld_agg_zone.rds"
 bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
-  bec_ld_agg_zone <- raster::aggregate(bec_ld_agg, by = c("zone", "category"))
+  bec_ld_agg_zone <- group_by(bec_ld_agg, zone, category) %>%
+    st_segmentize(1)
+    summarize()
   bec_ld_agg_zone <- fix_geo_problems(bec_ld_agg_zone)
+  bec_ld_agg_zone$area <- st_area(bec_ld_agg_zone)
   saveRDS(bec_ld_agg_zone, bec_ld_agg_zone_rds)
   bec_ld_agg_zone
 })
