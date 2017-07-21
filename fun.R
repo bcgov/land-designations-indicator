@@ -59,10 +59,10 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 #' foo <- mapshaper_apply(ecoprovinces, "CPRVNCCD", ms_simplify, keep_shapes = TRUE, recombine = FALSE)
 #' lapply(foo, plot)
 #' bar <- recombine_spatial_list(foo)
-mapshaper_apply <- function(spdf, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
+mapshaper_apply <- function(x, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
   if (parallel && !require("parallel")) stop("library 'parallel' not available")
 
-  spdf_list <- split_on_attribute(spdf, column)
+  x_list <- split_on_attribute(x, column)
 
   if (parallel) {
     ## Do the simplification in Parallel:
@@ -73,41 +73,19 @@ mapshaper_apply <- function(spdf, column, fun = ms_simplify, ..., parallel = FAL
 
     clusterEvalQ(cl, library(rmapshaper))
 
-    spdf_list_out <- parLapply(cl, spdf_list, fun, ...)
+    x_list_out <- parLapply(cl, x_list, fun, ...)
   } else {
-    spdf_list_out <- lapply(spdf_list, fun, ...)
+    x_list_out <- lapply(x_list, fun, ...)
   }
 
-  if (!recombine) return(spdf_list_out)
+  if (!recombine) return(x_list_out)
 
-  combine_spatial_list(spdf_list_out)
-}
+  if (inherits(x, "sf")) {
+    return(do.call("rbind", x_list_out))
+  } else {
+    return(combine_spatial_list(x_list_out))
+  }
 
-mapshaper_apply_sf <- function(sf, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
-    if (parallel && !require("parallel")) stop("library 'parallel' not available")
-
-    sf_list <- split_on_attribute(sf, column)
-    gj_list <- lapply(sf_list, geojsonio::geojson_json)
-
-    if (parallel) {
-      ## Do the simplification in Parallel:
-      no_cores <- parallel::detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
-      cl <- parallel::makeCluster(no_cores)
-
-      on.exit(parallel::stopCluster(cl))
-
-      parallel::clusterEvalQ(cl, library(rmapshaper))
-
-      geojson_list_out <- parallel::parLapply(cl, gj_list, fun, ...)
-    } else {
-      geojson_list_out <- lapply(gj_list, fun, ...)
-    }
-
-    sf_list_out <- lapply(geojson_list_out, sf::read_sf)
-
-    if (!recombine) return(sf_list_out)
-
-    dplyr::bind_rows(sf_list_out)
 }
 
 split_on_attribute <- function(spdf, column) {
