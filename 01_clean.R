@@ -174,12 +174,30 @@ bec_ld_agg <- tryCatch(readRDS(bec_ld_agg_rds), error = function(e) {
   bec_ld_agg
 })
 
+
+agg_sum <- function(x, ...) {
+  if (is.character(x)) first(x, ...) else sum(x, ...)
+}
+
+
 ## Here
 bec_ld_agg_zone_rds <- "tmp/bec_ld_agg_zone.rds"
 bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
-  bec_ld_agg_zone <- group_by(bec_ld_agg, zone, category) %>%
-    st_segmentize(1)
-    summarize()
+
+  bec_ld_agg_sp <- ungroup(bec_ld_agg) %>%
+    select(zone, category, area) %>%
+    mutate(area = as.numeric(area)) %>%
+    as("Spatial") %>%
+    fix_geo_problems()
+
+  bec_ld_agg_zone <- aggregate(bec_ld_agg_sp,
+                                  by = list(bec_ld_agg_sp$zone, bec_ld_agg_sp$category),
+                                  FUN = "agg_sum") %>%
+    st_as_sf() %>%
+    select(-Group.1, -Group.2)
+  # bec_ld_agg_zone <- group_by(bec_ld_agg, zone, category) %>%
+  #   st_segmentize(1)
+  #   summarize()
   bec_ld_agg_zone <- fix_geo_problems(bec_ld_agg_zone)
   bec_ld_agg_zone$area <- st_area(bec_ld_agg_zone)
   saveRDS(bec_ld_agg_zone, bec_ld_agg_zone_rds)
@@ -193,7 +211,8 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
                                     keep = 0.005, keep_shapes = TRUE,
                                     parallel = FALSE, recombine = TRUE) %>%
     fix_geo_problems() %>%
-    raster::aggregate(by = c("category","zone"))
+    group_by(zone, category) %>%
+    summarize()
   saveRDS(ld_bec_simp, ld_bec_simp_rds)
   ld_bec_simp
 })
@@ -214,7 +233,7 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
 
 eco_ld_rds <- "tmp/eco_ld.rds"
 eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
-  eco_ld <- readOGR("data/lands_eco.gpkg", stringsAsFactors = FALSE) %>%
+  eco_ld <- read_sf("data/lands_eco.gpkg", stringsAsFactors = FALSE) %>%
     fix_geo_problems()
   saveRDS(eco_ld, eco_ld_rds)
   eco_ld
@@ -228,27 +247,36 @@ eco_ld_t <- tryCatch(readRDS(eco_ld_t_rds), error = function(e) {
                        "parent_ecoregion_code", "ecosection_name",
                        "ecosection_code", "shape_area")] %>%
     fix_geo_problems()
-  eco_ld_t$calc_area <- rgeos::gArea(eco_ld_t, byid = TRUE)
+  eco_ld_t$calc_area <- sf::st_area(eco_ld_t)
   saveRDS(eco_ld_t, eco_ld_t_rds)
   eco_ld_t
 })
 
 ecosec_ld_agg_rds <- "tmp/ecosec_ld_agg.rds"
 ecosec_ld_agg <- tryCatch(readRDS(ecosec_ld_agg_rds), error = function(e) {
-  ecosec_ld_agg <- raster::aggregate(eco_ld_t, by = c("category",
-                                                   "parent_ecoregion_code",
-                                                   "ecosection_name",
-                                                   "ecosection_code"))
-  ecosec_ld_agg <- fix_geo_problems(ecosec_ld_agg)
+  ecosec_ld_agg <- select(eco_ld_t, category, parent_ecoregion_code, ecosection_code, calc_area) %>%
+    as("Spatial") %>%
+    fix_geo_problems() %>%
+    aggregate(by = list(
+      eco_ld_t$category,
+      eco_ld_t$parent_ecoregion_code,
+      eco_ld_t$ecosection_code
+    ),
+    FUN = "agg_sum") %>%
+    fix_geo_problems() %>%
+    st_as_sf() %>%
+    select(-starts_with("Group"))
+
   saveRDS(ecosec_ld_agg, ecosec_ld_agg_rds)
   ecosec_ld_agg
 })
 
 ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
 ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
-  ecoreg_ld_agg <- raster::aggregate(ecosec_ld_agg_fix, by = c("category",
-                                                      "parent_ecoregion_code"))
-  ecoreg_ld_agg <- fix_geo_problems(ecoreg_ld_agg)
+  ecoreg_ld_agg <- group_by(ecosec_ld_agg, category, parent_ecoregion_code) %>%
+    summarize(calc_area = sum(as.numeric(calc_area))) %>%
+  fix_geo_problems()
+
   saveRDS(ecoreg_ld_agg, ecoreg_ld_agg_rds)
   ecoreg_ld_agg
 })
@@ -257,10 +285,12 @@ ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
 ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
 ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
   ld_ecoreg_simp <- mapshaper_apply(ecoreg_ld_agg, "parent_ecoregion_code", ms_simplify,
-                                  keep = 0.005, keep_shapes = TRUE,
-                                  parallel = FALSE, recombine = TRUE) %>%
-  fix_geo_problems() %>%
-  raster::aggregate(by = c("category","parent_ecoregion_code"))
+                                    keep = 0.005, keep_shapes = TRUE,
+                                    parallel = FALSE, recombine = TRUE) %>%
+    fix_geo_problems() %>%
+    group_by(category, parent_ecoregion_code) %>%
+    summarize(calc_area = sum(calc_area))
+
   saveRDS(ld_ecoreg_simp, ld_ecoreg_simp_rds)
   ld_ecoreg_simp
 })
@@ -269,15 +299,17 @@ ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
 ld_ecoreg_simp_more <- ms_simplify(ld_ecoreg_simp, keep = 0.05, keep_shapes = TRUE) %>%
   fix_geo_problems()
 
-gg_ld_ecoreg <- gg_fortify(ld_ecoreg_simp_more) %>%
-  rename(CRGNCD = parent_ecoregion_code) %>%
-  select(-rmapshaperid) %>%
-  write_feather("out-shiny/gg_ld_ecoreg.feather")
 
 ld_bec_simp_more <- ms_simplify(ld_bec_simp, keep = 0.05, keep_shapes = TRUE) %>%
   fix_geo_problems()
 
-gg_ld_bec <- gg_fortify(ld_bec_simp_more) %>%
+## Once ggplot2::geom_sf hits CRAN we shouldn't need to do this
+gg_ld_ecoreg <- as(ld_ecoreg_simp_more, "Spatial") %>%
+  gg_fortify() %>%
+  rename(CRGNCD = parent_ecoregion_code) %>%
+  write_feather("out-shiny/gg_ld_ecoreg.feather")
+
+gg_ld_bec <- as(ld_bec_simp_more, "Spatial") %>%
+  gg_fortify() %>%
   rename(ZONE = zone) %>%
-  select(-rmapshaperid) %>%
   write_feather("out-shiny/gg_ld_bec.feather")
