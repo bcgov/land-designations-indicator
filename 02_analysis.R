@@ -14,6 +14,7 @@ library(dplyr)
 library(tidyr)
 library(feather)
 library(readr)
+library(sf)
 
 source("fun.R")
 
@@ -21,10 +22,11 @@ dir.create("out", showWarnings = FALSE)
 dir.create("out-shiny", showWarnings = FALSE)
 
 ## BC Summary
-bc_ld_summary <- ld_t@data %>%
+bc_ld_summary <- ld_t %>%
+  st_set_geometry(NULL) %>%
   group_by(category) %>%
   summarize(area_des_ha = sum(area) * 1e-4) %>%
-  mutate(percent_des = (area_des_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100) %>%
+  mutate(percent_des = as.numeric((area_des_ha * 1e4) / sum(bc_bound_trim$SHAPE_Area) * 100)) %>%
   mutate_if(is.numeric, round, digits = 2) %>%
   write_feather("out-shiny/bc_ld_summary.feather") %>%
   write_csv("out/bc_land_designations_summary.csv")
@@ -32,14 +34,14 @@ bc_ld_summary <- ld_t@data %>%
 ################################################################################
 # BEC
 
-bec_cat_summary <- bec_ld_t@data %>%
+bec_cat_summary <- bec_ld_t%>% st_set_geometry(NULL) %>%
   group_by(map_label, category = factor(category)) %>%
   summarize(area_des = sum(calc_area, na.rm = TRUE)) %>%
-  right_join(group_by(bec_t@data, MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
+  right_join(group_by(st_set_geometry(bec_t, NULL), MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
                       VARIANT, VARIANT_NAME) %>%
                summarize(bec_area = sum(bec_area, na.rm = TRUE)),
              by = c("map_label" = "MAP_LABEL")) %>%
-  mutate(percent_des = area_des / bec_area * 100,
+  mutate(percent_des = as.numeric(area_des / bec_area * 100),
          area_des_ha = area_des * 1e-4) %>%
   complete(nesting(map_label, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
                    VARIANT, VARIANT_NAME, bec_area), category,
@@ -53,19 +55,19 @@ bec_zone_cat_summary <- bec_cat_summary %>%
   group_by(ZONE, category) %>%
   summarize(area_designated_ha = sum(area_des_ha, na.rm = TRUE),
             zone_area_ha = sum(bec_area, na.rm = TRUE) * 1e-4,
-            percent_designated = area_designated_ha / zone_area_ha * 100) %>%
+            percent_designated = as.numeric(area_designated_ha / zone_area_ha * 100)) %>%
   mutate_if(is.numeric, round, digits = 2) %>%
   arrange(ZONE, category) %>%
   write_csv("out/bc_bgc_zone_land_designations_summary.csv")
 
 
-bec_zone_sizes <- bec_t@data %>%
+bec_zone_sizes <- bec_t%>% st_set_geometry(NULL) %>%
   group_by(ZONE) %>%
   summarise(area = sum(bec_area, na.rm = TRUE) * 1e-4)
 ################################################################################
 # Ecoregions and ecosections
 
-ecosec_sizes <- eco_ld@data %>%
+ecosec_sizes <- eco_ld %>% st_set_geometry(NULL) %>%
   filter(bc_boundary == "bc_boundary_land_tiled") %>%
   group_by(parent_ecoregion_code, ecosection_name, ecosection_code) %>%
   summarize(ecosec_area = max(shape_area, na.rm = TRUE))
@@ -74,13 +76,13 @@ ecoreg_sizes <- ecosec_sizes %>%
   group_by(ecoregion_code = parent_ecoregion_code) %>%
   summarize(ecoreg_area = sum(ecosec_area, na.rm = TRUE))
 
-ecosection_cat_summary <- eco_ld_t@data %>%
+ecosection_cat_summary <- eco_ld_t %>% st_set_geometry(NULL) %>%
   right_join(ecosec_sizes, by = c("parent_ecoregion_code", "ecosection_name", "ecosection_code")) %>%
   complete(nesting(parent_ecoregion_code, ecosection_name, ecosection_code, ecosec_area), category) %>%
   group_by(category, parent_ecoregion_code, ecosection_name, ecosection_code) %>%
   summarize(area_des = sum(calc_area, na.rm = TRUE),
             ecosec_area = sum(ecosec_area, na.rm = TRUE),
-            percent_des = area_des / ecosec_area * 100,
+            percent_des = as.numeric(area_des / ecosec_area * 100),
             area_des_ha = area_des * 1e-4) %>%
   write_csv("out/bc_ecosections_land_designations_summary.csv")
 
@@ -88,7 +90,7 @@ ecoregion_cat_summary <- ecosection_cat_summary %>%
   group_by(ecoregion_code = parent_ecoregion_code, category) %>%
   summarize(area_des = sum(area_des, na.rm = TRUE)) %>%
   right_join(ecoreg_sizes, by = "ecoregion_code") %>%
-  mutate(percent_des = area_des / ecoreg_area * 100,
+  mutate(percent_des = as.numeric(area_des / ecoreg_area * 100),
             area_des_ha = area_des * 1e-4) %>%
   write_feather("out-shiny/ld_ecoreg_summary.feather") %>%
   write_csv("out/bc_ecoregions_land_designations_summary.csv")

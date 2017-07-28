@@ -16,7 +16,7 @@
 # library(raster)
 library(bcmaps)
 library(geojsonio)
-library(rmapshaper)
+library(rmapshaper) # Need development version using devtools::install_github("ateucher/rmapshaper")
 library(feather)
 library(readr)
 library(dplyr)
@@ -41,7 +41,8 @@ bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
 bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
 bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
   rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
-  gg_fortify() %>%
+    as("Spatial") %>%
+    gg_fortify() %>%
   write_feather(bc_bound_simp_feather)
 })
 
@@ -70,15 +71,12 @@ gg_ecoreg <- gg_fortify(as(ecoregions_t_simp, "Spatial")) %>% write_feather("out
 
 eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
 ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
-  eco_t_simp_leaflet <- geojson_json(ecoregions_t[,c("CRGNCD", "CRGNNM")]) %>%
-    ms_simplify(0.003) %>%
-    read_sf() %>%
+  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
     fix_geo_problems() %>%
     st_set_crs(3005) %>%
     st_transform(4326) %>%
-    mutate(CRGNNM <- tools::toTitleCase(tolower(as.character(CRGNNM)))) %>%
-    select(-rmapshaperid)
-  saveRDS(ecoregions_t_simp_leaflet, eco_leaflet_rds)
+    mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM))))
+  saveRDS(eco_t_simp_leaflet, eco_leaflet_rds)
   eco_t_simp_leaflet
 })
 
@@ -158,7 +156,7 @@ bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
     filter(bc_boundary == "bc_boundary_land_tiled" &
              category != "" & !is.na(category)) %>%
     fix_geo_problems() %>%
-    mutate(area = st_area(.))
+    mutate(calc_area = st_area(.))
   saveRDS(bec_ld_t, bec_ld_rds)
   bec_ld_t
 })
@@ -168,7 +166,7 @@ bec_ld_agg_rds <- "tmp/bec_ld_agg.rds"
 bec_ld_agg <- tryCatch(readRDS(bec_ld_agg_rds), error = function(e) {
   bec_ld_agg <- group_by(bec_ld_t, category, zone, subzone, variant,
                                        map_label) %>%
-    summarize(area = sum(area))
+    summarize(calc_area = sum(calc_area))
   bec_ld_agg <- fix_geo_problems(bec_ld_agg)
   saveRDS(bec_ld_agg, bec_ld_agg_rds)
   bec_ld_agg
@@ -185,7 +183,7 @@ bec_ld_agg_zone_rds <- "tmp/bec_ld_agg_zone.rds"
 bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
 
   bec_ld_agg_sp <- ungroup(bec_ld_agg) %>%
-    select(zone, category, area) %>%
+    select(zone, category, calc_area) %>%
     mutate(area = as.numeric(area)) %>%
     as("Spatial") %>%
     fix_geo_problems()
