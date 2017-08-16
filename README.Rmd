@@ -62,7 +62,7 @@ python designatedlands.py overlay BEC_BIOGEOCLIMATIC_POLY.gdb --in_layer=WHSE_FO
 ## https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia
 ## and store it in your working directory
 
-python designatedlands.py overlay ERC_ECOSECTIONS_SP.gdb --in_layer=WHSE_TERRESTRIAL_ECOLOGY_ERC_ECOSECTIONS_SP_polygon --dump_file --out_file=lands_eco2.gpkg --new_layer_name=eco --aggregate_fields="bc_boundary,designation,category,parent_ecoregion_code,ecosection_code"
+python designatedlands.py overlay ERC_ECOSECTIONS_SP.gdb --in_layer=WHSE_TERRESTRIAL_ECOLOGY_ERC_ECOSECTIONS_SP_polygon --dump_file --out_file=lands_eco.gpkg --new_layer_name=eco --aggregate_fields="bc_boundary,designation,category,parent_ecoregion_code,ecosection_code,ecosection_name"
 
 ```
 The outputs from that script should be:
