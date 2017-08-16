@@ -77,7 +77,7 @@ bec_zone_sizes <- bec_t%>% st_set_geometry(NULL) %>%
 ecosec_sizes <- eco_ld %>% st_set_geometry(NULL) %>%
   group_by(parent_ecoregion_code, # ecosection_name,
            ecosection_code) %>%
-  summarize(ecosec_area = max(calc_area, na.rm = TRUE))
+  summarize(ecosec_area = sum(calc_area, na.rm = TRUE))
 
 ecoreg_sizes <- ecosec_sizes %>%
   group_by(ecoregion_code = parent_ecoregion_code) %>%
