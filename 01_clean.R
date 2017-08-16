@@ -37,15 +37,6 @@ bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
   bc_bound_trim
 })
 
-## Simplify bc boundary, fortify for ggplot and write to feather file
-bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
-bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
-  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
-    as("Spatial") %>%
-    gg_fortify() %>%
-  write_feather(bc_bound_simp_feather)
-})
-
 ## Clip Ecoregions to BC Boundary
 ecoreg_t_rds <- "tmp/ecoreg_t.rds"
 ecoregions_t <- tryCatch(readRDS(ecoreg_t_rds), error = function(e) {
@@ -56,28 +47,6 @@ ecoregions_t <- tryCatch(readRDS(ecoreg_t_rds), error = function(e) {
   eco_t$ecoreg_area <- st_area(eco_t)
   saveRDS(eco_t, file = ecoreg_t_rds)
   eco_t
-})
-
-## Create simplified versions of ecoregions for visualization
-ecoregions_t_simp_rds <- "tmp/ecoregions_t_simp.rds"
-ecoregions_t_simp <- tryCatch(readRDS(ecoregions_t_simp_rds), error = function(e) {
-  eco_t_simp <- ms_simplify(ecoregions_t, 0.01) %>%
-    fix_geo_problems()
-  saveRDS(eco_t_simp, ecoregions_t_simp_rds)
-  eco_t_simp
-})
-
-gg_ecoreg <- gg_fortify(as(ecoregions_t_simp, "Spatial")) %>% write_feather("out-shiny/gg_ecoreg.feather")
-
-eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
-ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
-  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
-    fix_geo_problems() %>%
-    st_set_crs(3005) %>%
-    st_transform(4326) %>%
-    mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM))))
-  saveRDS(eco_t_simp_leaflet, eco_leaflet_rds)
-  eco_t_simp_leaflet
 })
 
 ## Clip bgc to BC boundary
@@ -92,6 +61,72 @@ bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
   bec_t
 })
 
+## Get full land designations file
+ld_t_rds <- "tmp/ld_t.rds"
+ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
+  ld_t <- read_sf("data/designatedlands_new2.gpkg") %>%
+    select(-bc_boundary) %>%
+    filter(category != "" & !is.na(category)) %>%
+    mutate(area = st_area(.))
+  saveRDS(ld_t, ld_t_rds)
+  ld_t
+})
+
+## Load BEC x land designations
+bec_ld_rds <- "tmp/bec_ld_t.rds"
+bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
+  bec_ld <- read_sf("data/lands_bec_agg.gpkg") %>%
+    select(-bc_boundary) %>%
+    mutate(calc_area = st_area(.))
+  saveRDS(bec_ld, bec_ld_rds)
+  bec_ld
+})
+
+## Load Ecosections x land designations
+eco_ld_rds <- "tmp/eco_ld.rds"
+eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
+  eco_ld <- read_sf("data/lands_eco_agg.gpkg") %>%
+    select(-bc_boundary) %>%
+    mutate(calc_area = st_area(.))
+  saveRDS(eco_ld, eco_ld_rds)
+  eco_ld
+})
+
+# Simplification and aggregation for visualizations -----------------------
+
+## Simplify bc boundary, fortify for ggplot and write to feather file
+bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
+bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
+  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
+    as("Spatial") %>%
+    gg_fortify() %>%
+    write_feather(bc_bound_simp_feather)
+})
+
+## Create simplified versions of ecoregions for leaflet map
+eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
+ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
+  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
+    fix_geo_problems() %>%
+    st_set_crs(3005) %>%
+    st_transform(4326) %>%
+    mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM))))
+  saveRDS(eco_t_simp_leaflet, eco_leaflet_rds)
+  eco_t_simp_leaflet
+})
+
+## Create simplified versions of ecoregions for visualization
+ecoregions_t_simp_rds <- "tmp/ecoregions_t_simp.rds"
+ecoregions_t_simp <- tryCatch(readRDS(ecoregions_t_simp_rds), error = function(e) {
+  eco_t_simp <- ms_simplify(ecoregions_t, 0.01) %>%
+    fix_geo_problems()
+  saveRDS(eco_t_simp, ecoregions_t_simp_rds)
+  eco_t_simp
+})
+
+gg_ecoreg <- gg_fortify(as(ecoregions_t_simp, "Spatial")) %>% write_feather("out-shiny/gg_ecoreg.feather")
+
+## Simplify BEC pologyons for use in display
 bec_zone_rds <- "tmp/bec_zone.rds"
 bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
   bec_zone <- group_by(bec_t, ZONE) %>%
@@ -102,7 +137,6 @@ bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
   bec_zone
 })
 
-## Simplify BEC pologyons for use in display
 bec_zone_simp_rds <- "tmp/bec_zone_simp.rds"
 bec_zone_simp <- tryCatch(readRDS(bec_zone_simp_rds), error = function(e) {
   bec_zone$zone_area <- as.numeric(bec_zone$zone_area) ## Of class units, need as numeric
@@ -135,79 +169,12 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
   bec_zone_leaflet
 })
 
-## Get full land designations file
-ld_t_rds <- "tmp/ld_t.rds"
-ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
-  ld_t <- read_sf("data/designatedlands.gpkg") %>%
-    fix_geo_problems() %>%
-    filter(bc_boundary == "bc_boundary_land_tiled" &
-             category != "" & !is.na(category)) %>%
-    fix_geo_problems() %>%
-    mutate(area = st_area(.))
-  saveRDS(ld_t, ld_t_rds)
-  ld_t
-})
-
-## Load BEC x land designations
-bec_ld_rds <- "tmp/bec_ld_t.rds"
-bec_ld_t <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
-  bec_ld_t <- read_sf("data/lands_bec.gpkg") %>%
-    fix_geo_problems() %>%
-    filter(bc_boundary == "bc_boundary_land_tiled" &
-             category != "" & !is.na(category)) %>%
-    fix_geo_problems() %>%
-    mutate(calc_area = st_area(.))
-  saveRDS(bec_ld_t, bec_ld_rds)
-  bec_ld_t
-})
-
-# Make some aggregated and simplified products from bec_ld:
-bec_ld_agg_rds <- "tmp/bec_ld_agg.rds"
-bec_ld_agg <- tryCatch(readRDS(bec_ld_agg_rds), error = function(e) {
-  bec_ld_agg <- group_by(bec_ld_t, category, zone, subzone, variant,
-                                       map_label) %>%
-    summarize(calc_area = sum(calc_area))
-  bec_ld_agg <- fix_geo_problems(bec_ld_agg)
-  saveRDS(bec_ld_agg, bec_ld_agg_rds)
-  bec_ld_agg
-})
-
-
-agg_sum <- function(x, ...) {
-  if (is.character(x)) first(x, ...) else sum(x, ...)
-}
-
-
-## Here
-bec_ld_agg_zone_rds <- "tmp/bec_ld_agg_zone.rds"
-bec_ld_agg_zone <- tryCatch(readRDS(bec_ld_agg_zone_rds), error = function(e) {
-
-  bec_ld_agg_sp <- ungroup(bec_ld_agg) %>%
-    select(zone, category, calc_area) %>%
-    mutate(area = as.numeric(area)) %>%
-    as("Spatial") %>%
-    fix_geo_problems()
-
-  bec_ld_agg_zone <- aggregate(bec_ld_agg_sp,
-                                  by = list(bec_ld_agg_sp$zone, bec_ld_agg_sp$category),
-                                  FUN = "agg_sum") %>%
-    st_as_sf() %>%
-    select(-Group.1, -Group.2)
-  # bec_ld_agg_zone <- group_by(bec_ld_agg, zone, category) %>%
-  #   st_segmentize(1)
-  #   summarize()
-  bec_ld_agg_zone <- fix_geo_problems(bec_ld_agg_zone)
-  bec_ld_agg_zone$area <- st_area(bec_ld_agg_zone)
-  saveRDS(bec_ld_agg_zone, bec_ld_agg_zone_rds)
-  bec_ld_agg_zone
-})
-
 ## Simplify bec x ld
 ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
 ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
   ld_bec_simp <- mapshaper_apply(bec_ld_agg_zone, "zone", ms_simplify,
-                                    keep = 0.005, keep_shapes = TRUE,
-                                    parallel = FALSE, recombine = TRUE) %>%
+                                 keep = 0.005, keep_shapes = TRUE,
+                                 parallel = FALSE, recombine = TRUE) %>%
     fix_geo_problems() %>%
     group_by(zone, category) %>%
     summarize()
@@ -215,65 +182,11 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
   ld_bec_simp
 })
 
-## Load Ecosections x land designations (using sf)
-# eco_ld_sf_rds <- "tmp/sf/eco_ld_t.rds"
-# eco_ld_t <- tryCatch(readRDS(eco_ld_sf_rds), error = function(e) {
-#   eco_ld_t <- read_sf("data/lands_ecosections.gdb") %>%
-#     filter(bc_boundary == "bc_boundary_land_tiled",
-#            !is.na(category),
-#            category != "") %>%
-#     select(eco_ld_t, designation, map_tile, category, parent_ecoregion_code,
-#            ecosection_name, ecosection_code, shape_area, SHAPE) %>%
-#     fix_geo_problems()
-#   saveRDS(eco_ld_t, eco_ld_sf_rds)
-#   eco_ld_t
-# })
-
-eco_ld_rds <- "tmp/eco_ld.rds"
-eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
-  eco_ld <- read_sf("data/lands_eco.gpkg", stringsAsFactors = FALSE) %>%
-    fix_geo_problems()
-  saveRDS(eco_ld, eco_ld_rds)
-  eco_ld
-})
-
-eco_ld_t_rds <- "tmp/eco_ld_t.rds"
-eco_ld_t <- tryCatch(readRDS(eco_ld_t_rds), error = function(e) {
-  eco_ld_t <- eco_ld[eco_ld$bc_boundary == "bc_boundary_land_tiled" &
-                       eco_ld$category != "" & !is.na(eco_ld$category),
-                     c("designation", "map_tile", "category",
-                       "parent_ecoregion_code", "ecosection_name",
-                       "ecosection_code", "shape_area")] %>%
-    fix_geo_problems()
-  eco_ld_t$calc_area <- sf::st_area(eco_ld_t)
-  saveRDS(eco_ld_t, eco_ld_t_rds)
-  eco_ld_t
-})
-
-ecosec_ld_agg_rds <- "tmp/ecosec_ld_agg.rds"
-ecosec_ld_agg <- tryCatch(readRDS(ecosec_ld_agg_rds), error = function(e) {
-  ecosec_ld_agg <- select(eco_ld_t, category, parent_ecoregion_code, ecosection_code, calc_area) %>%
-    as("Spatial") %>%
-    fix_geo_problems() %>%
-    aggregate(by = list(
-      eco_ld_t$category,
-      eco_ld_t$parent_ecoregion_code,
-      eco_ld_t$ecosection_code
-    ),
-    FUN = "agg_sum") %>%
-    fix_geo_problems() %>%
-    st_as_sf() %>%
-    select(-starts_with("Group"))
-
-  saveRDS(ecosec_ld_agg, ecosec_ld_agg_rds)
-  ecosec_ld_agg
-})
-
+## Aggregate by ecoregion
 ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
 ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
-  ecoreg_ld_agg <- group_by(ecosec_ld_agg, category, parent_ecoregion_code) %>%
-    summarize(calc_area = sum(as.numeric(calc_area))) %>%
-  fix_geo_problems()
+  ecoreg_ld_agg <- group_by(eco_ld, category, parent_ecoregion_code) %>%
+    summarise(calc_area = sum(as.numeric(calc_area)))
 
   saveRDS(ecoreg_ld_agg, ecoreg_ld_agg_rds)
   ecoreg_ld_agg
