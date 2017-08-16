@@ -16,7 +16,7 @@
 # library(raster)
 library(bcmaps)
 library(geojsonio)
-library(rmapshaper) # Need development version using devtools::install_github("ateucher/rmapshaper")
+library(rmapshaper)
 library(feather)
 library(readr)
 library(dplyr)
@@ -64,7 +64,7 @@ bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
 ## Get full land designations file
 ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
-  ld_t <- read_sf("data/designatedlands_new2.gpkg") %>%
+  ld_t <- read_sf("data/designatedlands.gpkg") %>%
     filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
     mutate(area = st_area(.))
@@ -84,7 +84,7 @@ bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
 })
 
 ## Load Ecosections x land designations
-eco_ld_rds <- "tmp/eco_ld.rds"
+eco_ld_rds <- "tmp/eco_ld_t.rds"
 eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
   eco_ld <- read_sf("data/lands_eco_agg.gpkg") %>%
     filter(bc_boundary == "bc_boundary_land_tiled") %>%
