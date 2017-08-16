@@ -65,8 +65,8 @@ bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
 ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
   ld_t <- read_sf("data/designatedlands_new2.gpkg") %>%
+    filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
-    filter(category != "" & !is.na(category)) %>%
     mutate(area = st_area(.))
   saveRDS(ld_t, ld_t_rds)
   ld_t
@@ -76,6 +76,7 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
   bec_ld <- read_sf("data/lands_bec_agg.gpkg") %>%
+    filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
     mutate(calc_area = st_area(.))
   saveRDS(bec_ld, bec_ld_rds)
@@ -86,6 +87,7 @@ bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
 eco_ld_rds <- "tmp/eco_ld.rds"
 eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
   eco_ld <- read_sf("data/lands_eco_agg.gpkg") %>%
+    filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
     mutate(calc_area = st_area(.))
   saveRDS(eco_ld, eco_ld_rds)
