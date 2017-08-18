@@ -159,6 +159,40 @@ clip_only.sf <- function(x, bc) {
   rbind(x[!covers, ], clipped[, setdiff(names(clipped), "rmapshaperid")])
 }
 
+#' Use rmapshaper to dissolve and simplify a complex sf polygon object
+#'
+#' @param x sf object
+#' @param fields fields to dissolve on
+#' @param snap_interval the distance within which to snap adjacent shapes together
+#' @param keep proportion of vertices to keep when simplifying
+#' @param keep_shapes keep shapes when they get very small
+#'
+#' @return sf object
+#' @export
+#'
+#' @examples
+dissolve_and_simplify <- function(x, fields, snap_interval = 1, keep = 0.001, keep_shapes = TRUE) {
+  x$agg_field <- paste(x[[fields[1]]], x[[fields[2]]], sep = "::::")
+
+  x_list <- split_on_attribute(x, "agg_field")
+
+  x_list_diss <- lapply(x_list, rmapshaper::ms_dissolve,
+                        snap = TRUE, snap_interval = snap_interval,
+                        merge_overlaps = TRUE, copy_fields = fields)
+
+  x_list_diss <- lapply(x_list_diss, fix_geo_problems)
+
+  x_list_simp <- lapply(x_list_diss, rmapshaper::ms_simplify,
+                        keep = keep, keep_shapes = keep_shapes)
+
+  x_simp <- do.call("rbind", x_list_simp)
+
+  fix_geo_problems(x_simp[, setdiff(names(x_simp), "agg_field"), drop = FALSE])
+}
+
+
+
+
 get_latest_release <- function(repo_path) {
   if (!require(httr)) stop("You need the 'httr' package to use this function", call. = FALSE)
 
