@@ -171,6 +171,8 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
   bec_zone_leaflet
 })
 
+## TODO
+
 ## Simplify bec x ld
 ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
 ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
@@ -195,9 +197,9 @@ ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
 })
 
 ## Simplify ld x ecoregions
-ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
+ld_ecoreg_simp_rds <- "tmp/stash2/ld_ecoreg_simp.rds"
 ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
-  ld_ecoreg_simp <- mapshaper_apply(ecoreg_ld_agg, "parent_ecoregion_code", ms_simplify,
+  ld_ecoreg_simp <- mapshaper_apply(eco_ld, "parent_ecoregion_code", ms_simplify,
                                     keep = 0.005, keep_shapes = TRUE,
                                     parallel = FALSE, recombine = TRUE) %>%
     fix_geo_problems() %>%

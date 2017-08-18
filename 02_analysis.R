@@ -41,20 +41,19 @@ bc_ld_summary <- ld_t %>%
 
 bec_cat_summary <- bec_ld %>% st_set_geometry(NULL) %>%
   filter_non_designated() %>%
-  group_by(bgc_label, category = factor(category)) %>%
+  group_by(map_label, category = factor(category)) %>%
   summarize(area_des = sum(calc_area, na.rm = TRUE)) %>%
-  right_join(group_by(st_set_geometry(bec_t, NULL), MAP_LABEL, BGC_LABEL, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
-                      VARIANT, VARIANT_NAME) %>%
+  right_join(group_by(st_set_geometry(bec_t, NULL), MAP_LABEL, ZONE, ZONE_NAME,
+                      SUBZONE, SUBZONE_NAME, VARIANT, VARIANT_NAME) %>%
                summarize(bec_area = sum(bec_area, na.rm = TRUE)),
-             by = c("bgc_label" = "BGC_LABEL")) %>%
+             by = c("map_label" = "MAP_LABEL")) %>%
   mutate(percent_des = as.numeric(area_des / bec_area * 100),
          area_des_ha = area_des * 1e-4) %>%
-  complete(nesting(bgc_label, MAP_LABEL, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
+  complete(nesting(map_label, ZONE, ZONE_NAME, SUBZONE, SUBZONE_NAME,
                    VARIANT, VARIANT_NAME, bec_area), category,
            fill = list(area_des = 0, area_des_ha = 0, percent_des = 0)) %>%
   mutate(category = as.character(category)) %>%
-  # rename(MAP_LABEL = map_label) %>%
-  select(-bgc_label) %>%
+  rename(MAP_LABEL = map_label) %>%
   write_feather("out-shiny/ld_bec_summary.feather") %>%
   write_csv("out/bc_bgc_land_designations_summary.csv")
 
