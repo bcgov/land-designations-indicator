@@ -75,7 +75,7 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
 ## Load BEC x land designations
 bec_ld_rds <- "tmp/bec_ld_t.rds"
 bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
-  bec_ld <- read_sf("data/lands_bec_agg.gpkg") %>%
+  bec_ld <- read_sf("data/lands_bec.gpkg") %>%
     filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
     mutate(calc_area = st_area(.))
@@ -86,7 +86,7 @@ bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
 ## Load Ecosections x land designations
 eco_ld_rds <- "tmp/eco_ld_t.rds"
 eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
-  eco_ld <- read_sf("data/lands_eco_agg.gpkg") %>%
+  eco_ld <- read_sf("data/lands_eco.gpkg") %>%
     filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
     mutate(calc_area = st_area(.))
@@ -95,6 +95,18 @@ eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
 })
 
 # Simplification and aggregation for visualizations -----------------------
+
+ld_agg <- ld_t %>%
+  filter(!is.na(category)) %>%
+  group_by(category, designation) %>%
+  summarise()
+saveRDS(ld_agg, "tmp/ld_agg.rds")
+
+ld_agg_cat <- ld_t %>%
+  filter(!is.na(category)) %>%
+  group_by(category) %>%
+  summarise()
+saveRDS(ld_agg_cat, "tmp/ld_agg_cat.rds")
 
 ## Simplify bc boundary, fortify for ggplot and write to feather file
 bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
