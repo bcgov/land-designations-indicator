@@ -113,7 +113,7 @@ ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function
     st_set_crs(3005) %>%
     st_transform(4326) %>%
     mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM))))
-  saveRDS(eco_t_simp_leaflet, eco_leaflet_rds)
+  saveRDS(as(eco_t_simp_leaflet, "Spatial"), eco_leaflet_rds)
   eco_t_simp_leaflet
 })
 
@@ -142,12 +142,9 @@ bec_zone <- tryCatch(readRDS(bec_zone_rds), error = function(e) {
 bec_zone_simp_rds <- "tmp/bec_zone_simp.rds"
 bec_zone_simp <- tryCatch(readRDS(bec_zone_simp_rds), error = function(e) {
   bec_zone$zone_area <- as.numeric(bec_zone$zone_area) ## Of class units, need as numeric
-  bec_zone_simp <- geojson_json(bec_zone) %>%
+  bec_zone_simp <- bec_zone %>%
     ms_simplify(keep = 0.005) %>%
-    read_sf() %>%
-    fix_geo_problems() %>%
-    st_set_crs(3005) %>%
-    select(-rmapshaperid)
+    fix_geo_problems()
   saveRDS(bec_zone_simp, bec_zone_simp_rds)
   bec_zone_simp
 })
@@ -159,19 +156,14 @@ gg_bec <- as(bec_zone_simp, "Spatial") %>%
 ## Further simplification for BEC leaflet map
 bec_zone_leaflet_rds <- "out-shiny/bec_leaflet.rds"
 bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) {
-  bec_zone_leaflet <- geojson_json(bec_zone_simp) %>%
+  bec_zone_leaflet <- bec_zone_simp %>%
     ms_simplify(0.1) %>%
-    read_sf() %>%
     fix_geo_problems() %>%
-    st_set_crs(3005) %>%
-    select(-rmapshaperid) %>%
     st_transform(4326)
   bec_zone_leaflet$ZONE <- as.character(bec_zone_leaflet$ZONE)
-  saveRDS(bec_zone_leaflet, bec_zone_leaflet_rds)
+  saveRDS(as(bec_zone_leaflet, "Spatial"), bec_zone_leaflet_rds)
   bec_zone_leaflet
 })
-
-## TODO
 
 ## Simplify bec x ld
 ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
