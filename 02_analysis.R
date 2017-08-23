@@ -21,10 +21,6 @@ source("fun.R")
 dir.create("out", showWarnings = FALSE)
 dir.create("out-shiny", showWarnings = FALSE)
 
-filter_non_designated <- function(x) {
-  dplyr::filter(x, !is.na(category) & category != "")
-}
-
 ## BC Summary
 bc_ld_summary <- ld_t %>%
   st_set_geometry(NULL) %>%

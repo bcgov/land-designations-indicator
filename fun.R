@@ -10,6 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
+filter_non_designated <- function(x) {
+  dplyr::filter(x, !is.na(category) & category != "")
+}
+
 gg_fortify <- function(x) {
   if (!require("maptools")) stop("maptools is not installed")
   if (!requireNamespace("ggplot2")) stop("ggplot2 is not installed.")
