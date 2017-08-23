@@ -1,29 +1,101 @@
 ---
-topic: # One of: "air", "water", "plants-and-animals", "climate-change", "land", "sustainability"
-title: "Indicator Title"
-bibliography: example.bib
+topic: "land"
+title: "Land Designations that Contribute to Conservation in B.C."
 output: envreportbc::print_ver
 ---
 
-<!--
-Instructions:
 
-If you don't have a bibliography, delete the bibliography line in the YAML header.
-If you do have a bibliography, insert the filename. In-text citations are done as:
-[@Moe-etal-1999]. End the document with the bibliography heading (e.g., # References).
--->
+```{r set-options, echo=FALSE, cache=FALSE, warning=FALSE, message=FALSE}
 
-Lorem ipsum dolor sit amet, maximus risus, imperdiet mi ac. Vitae tempor ultrices, odio euismod fames tempus at, sodales, eu lacus. Sit ac pellentesque eget ligula sociis mi sociis taciti sed nec. Sodales leo nam himenaeos a et. Porttitor adipiscing risus donec rhoncus est ut eget eu. Feugiat pellentesque donec, vitae neque. Sit faucibus eget nec quis turpis orci. Et, ultrices aptent magnis.
+knitr::opts_chunk$set(echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, 
+                      error=FALSE)
 
-
-```{r echo=FALSE, message=FALSE}
 library(ggplot2)
-ggplot(mtcars, aes(x = hp, y = mpg)) + 
-  geom_point() + 
-  geom_smooth()
+library(ggpolypath)
+library(envreportutils) #theme_soe_facet
+library(magrittr) # %>%
+library(feather) #read in feather file
+library(ggthemes)
+library(knitr) #for knitting to PDF
+
+## Find the root of the project so we can find the files in the directory tree.
+root <- rprojroot::is_rstudio_project
+
+read_chunk(root$find_file("output.R"))
+
+## read in datafiles
+ld_df <- read_feather(root$find_file("out-shiny/gg_ld_ecoreg.feather"))
+bc_map <-  read_feather(root$find_file("out-shiny/gg_bc_bound.feather"))
+bcsum <- read.csv(root$find_file("out/bc_land_designations_summary.csv"), stringsAsFactors = FALSE)
+bgc <- read.csv(root$find_file("out/bc_bgc_zone_land_designations_summary.csv"), stringsAsFactors = FALSE)
+eco <- read.csv(root$find_file("out/bc_ecoregions_land_designations_summary.csv"), stringsAsFactors = FALSE)
 ```
 
-Cum vivamus penatibus sed mus fringilla non sociosqu taciti ut. Sed, semper lacus justo ultricies penatibus praesent. Tortor vivamus fermentum libero, libero urna montes orci luctus ligula? Tellus et mauris sed a in lacinia imperdiet. Sed nec penatibus sed at mauris etiam. Interdum morbi arcu vitae lectus cubilia eros, imperdiet felis. Nisl, lacinia vel, nisl, rutrum ac, elementum felis. Dui ante eros ex mi, interdum velit accumsan sociosqu, tempus. Erat vulputate potenti nascetur. Malesuada, curabitur, leo himenaeos, molestie euismod sit. In vitae sollicitudin adipiscing commodo.
+```{r pre}
+```
+
+Land designations that contribute to conservation are spatially-defined areas established through legislation or purchased for the protection of nature and cultural values, the conservation of biological diversity and ecosystem services and the management of natural resources. For example, conservation land designations include areas established as parks, areas identified to protect species at risk or cultural heritage, and areas that are identified to manage the balance of nature conservation and economic opportunities. This indicator reports on the status of land designations that are intended to contribute to conservation in British Columbia.
+
+
+-   Land designations that contribute to conservation are summarized in
+    three categories: **Protected Lands, Resource Exclusion Areas and
+    Spatially Managed Areas**. The three categories span a considerable
+    range in contribution to conservation, with variation in purpose,
+    scope and strength---with respect to intended conservation
+    outcomes---and length of the term of the designations.
+-   **Protected Lands**---covering 15.4% of British Columbia---includes all
+    **Parks & Protected Areas** (15.0%) and **Other Protected Lands**
+    (0.4%) with the *primary* purpose of the *long-term* conservation of
+    nature and cultural values.
+-   **Resource Exclusion Areas**---covering 12.4% of B.C.---includes all
+    designations that fully exclude one or two resource activities for
+    the purpose of conservation.
+-   **Spatially Managed Areas**---currently covering 24.5% of B.C.---
+    includes all spatial designations managing or limiting development
+    or a resource activity for the purpose of conservation, or a spatial
+    management regime in place to preserve specified elements of
+    biodiversity but where activity is still allowed to occur. The
+    designations within this category vary significantly in purpose and
+    scope of management.
+-   More detail on the land designations that contribute to conservation
+    and the three categories are provided [below](#details).
+
+
+\begin{center}
+\fbox{
+  \begin{minipage}[c]{12cm}
+  
+   \begingroup\centering{\textbf{Protected Lands in British Columbia}}
+   
+     \endgroup
+     
+    \vspace{1mm}
+    
+    \text{\textbf{15.4\%} of lands in B.C. are protected through legally established areas designated}
+    
+    \text{for the \textit{primary} purpose of the \textit{long-term} conservation of nature and cultural values.}
+    
+        \vspace{3mm}
+    
+    \href{http://www.env.gov.bc.ca/soe/indicators/land/protected-lands-and-waters.html}{Learn more about Protected Lands \& Waters in B.C.}
+    
+  \end{minipage}
+}
+\end{center}
+
+Summary of Land Designations that Contribute to Conservation in B.C. (2017)
+
+```{r map, fig.height=8, fig.width=7}
+```
+
+```{r bcsummary, fig.height=8, fig.width=7}
+```
+
+```{r bgc_summary, fig.height=8, fig.width=7}
+```
+
+```{r ecoreg_summary, fig.height=8, fig.width=7}
+```
 
 ## References and Other Useful Links
 
@@ -32,12 +104,12 @@ Cum vivamus penatibus sed mus fringilla non sociosqu taciti ut. Sed, semper lacu
 
 ## Data
 
-\*By accessing these datasets, you agree to the license associated with each file, as indicated in parentheses below.
+\*By accessing these datasets, you agree to the licence associated with each file, as indicated in parentheses below.
 
 * Data 1
 * Data 2
 
-Published and Available On-Line at Environmental Reporting BC (Month Year):
-[](http://www.env.gov.bc.ca/soe)
+Published and Available On-Line at Environmental Reporting BC (September 2017):
+[](http://wwwd.env.gov.bc.ca/soe/indicators/land/land-designations.html)
 
 Email correspondence to: envreportbc@gov.bc.ca
