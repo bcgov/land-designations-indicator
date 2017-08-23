@@ -177,6 +177,32 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
   bec_zone_leaflet
 })
 
+## Aggregate by ecoregion
+ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
+ld_ecoreg_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
+  ld_ecoreg_agg <- eco_ld %>%
+    filter_non_designated() %>%
+    group_by(parent_ecoregion_code, category) %>%
+    summarize()
+
+  saveRDS(ld_ecoreg_agg, ecoreg_ld_agg_rds)
+  ld_ecoreg_agg
+})
+
+## Simplify ld x ecoregions
+ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
+ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
+  ld_ecoreg_simp <- mapshaper_apply(ld_ecoreg_agg, "parent_ecoregion_code", ms_simplify,
+                                    keep = 0.005, keep_shapes = TRUE,
+                                    parallel = FALSE, recombine = TRUE) %>%
+    fix_geo_problems() %>%
+    foo <- group_by(ld_ecoreg_simp, ecoregion = parent_ecoregion_code, category) %>%
+    summarize()
+
+  saveRDS(ld_ecoreg_simp, ld_ecoreg_simp_rds)
+  ld_ecoreg_simp
+})
+
 ## Simplify bec x ld
 ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
 ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
@@ -188,30 +214,6 @@ ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
     summarize()
   saveRDS(ld_bec_simp, ld_bec_simp_rds)
   ld_bec_simp
-})
-
-## Aggregate by ecoregion
-ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
-ecoreg_ld_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
-  ecoreg_ld_agg <- group_by(eco_ld, category, parent_ecoregion_code) %>%
-    summarise(calc_area = sum(as.numeric(calc_area)))
-
-  saveRDS(ecoreg_ld_agg, ecoreg_ld_agg_rds)
-  ecoreg_ld_agg
-})
-
-## Simplify ld x ecoregions
-ld_ecoreg_simp_rds <- "tmp/stash2/ld_ecoreg_simp.rds"
-ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
-  ld_ecoreg_simp <- mapshaper_apply(eco_ld, "parent_ecoregion_code", ms_simplify,
-                                    keep = 0.005, keep_shapes = TRUE,
-                                    parallel = FALSE, recombine = TRUE) %>%
-    fix_geo_problems() %>%
-    group_by(category, parent_ecoregion_code) %>%
-    summarize(calc_area = sum(calc_area))
-
-  saveRDS(ld_ecoreg_simp, ld_ecoreg_simp_rds)
-  ld_ecoreg_simp
 })
 
 ## Simplify ld x ecoregion and ld x bec more, fortify for use with ggplot, and write out
