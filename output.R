@@ -17,6 +17,8 @@ library(magrittr) # %>%
 library(feather) #read in feather file
 library(ggthemes)
 
+
+
 files_list <- list.files("out-shiny", full.names = TRUE)
 file.copy(from = files_list, to = "../land-designations-shinyapp/app/data", overwrite = TRUE)
 
@@ -29,6 +31,8 @@ file.copy(from = files_list, to = "../land-designations-shinyapp/app/data", over
 #   coord_fixed()
 
 ## Static Outputs
+
+## @knitr pre
 
 ## colour palette
 des_cols <- c("01_PPA"                    = "#00441b",
@@ -44,13 +48,15 @@ rollup_category <- function(category) {
          levels = c("04_Managed", "03_Exclude_1_2_Activities", "Prot"), ordered = TRUE)
 }
 
-
+## @knitr pre end
 
 ## Static BC Summary map
 
 ## read in datafiles
-ld_df <- read_feather("out-shiny/gg_ld_ecoreg.feather")
-bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
+ld_df <- read_feather("/out-shiny/gg_ld_ecoreg.feather")
+bc_map <-  read_feather("/out-shiny/gg_bc_bound.feather")
+
+## @knitr map
 
 ## plot BC map with 3 categories
 ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
@@ -62,6 +68,7 @@ ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
   guides(fill = "none")
 plot(ld_map)
 
+## @knitr map end
 
 ## print BC Summary map to PNG
 png(filename = "out/bc_ld_map.png",
@@ -75,6 +82,9 @@ dev.off()
 ## Static bar chart for provincial summary by category
 ## read in datafile
 bcsum <- read.csv("out/bc_land_designations_summary.csv", stringsAsFactors = FALSE)
+
+
+## @knitr bcsummary
 
 ## roll-up two protected categories
 bcsum$rollup <- rollup_category(bcsum$category)
@@ -115,6 +125,8 @@ bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
        plot.margin = unit(c(3,3,2,1), "lines"))
 plot(bcsumplot)
 
+## @knitr bcsummary end
+
 ## print BC Summary plot to PNG
 png(filename = "out/bc_sum_plot.png",
     width = 500, height = 500, units = "px")
@@ -125,6 +137,8 @@ dev.off()
 ## Static facet bar chart for summary by bgc and category
 ##read in datafile
 bgc <- read.csv("out/bc_bgc_zone_land_designations_summary.csv", stringsAsFactors = FALSE)
+
+## @knitr bgc_summary
 
 ## Adding full BGC names to dataframe
 bgc$bec_nms <- bgc$ZONE
@@ -177,6 +191,8 @@ bgcfacetplot <- ggplot(bgc, aes(x = bec_nms, y = percent_designated, fill = cate
         plot.margin = unit(c(2,2,1,1), "lines"))
 plot(bgcfacetplot)
 
+## @knitr bgc_summary end
+
 ## print BGC facet plot to PNG
 png(filename = "out/bgc_facet_plot.png",
     width = 900, height = 700, units = "px")
@@ -186,6 +202,8 @@ dev.off()
 ## Static facet bar chart for summary by ecoregion and category
 ##read in datafile
 eco <- read.csv("out/bc_ecoregions_land_designations_summary.csv", stringsAsFactors = FALSE)
+
+## @knitr ecoreg_summary
 
 ## Adding full Ecoregion names to dataframe
 eco$eco_nms <- eco$ecoregion_code
@@ -268,6 +286,8 @@ ecofacetplot <- ggplot(eco, aes(x = eco_nms, y = percent_des, fill = category)) 
         axis.text = element_text(size = 9),
         plot.margin = unit(c(2,2,1,1), "lines"))
 plot(ecofacetplot)
+
+## @knitr ecoreg_summary end
 
 ## print facet plot to PNG
 png(filename = "out/ecoregion_facet_plot.png",
