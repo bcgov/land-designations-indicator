@@ -150,16 +150,16 @@ bgc <- read.csv("out/bc_bgc_zone_land_designations_summary.csv", stringsAsFactor
 ## Adding full BGC names to dataframe
 bgc$bec_nms <- bgc$ZONE
 bgc$bec_nms[bgc$bec_nms == "BAFA"] <- "Boreal Altai Fescue Alpine"
-bgc$bec_nms[bgc$bec_nms == "SWB"] <- "Spruce—Willow—Birch"
+bgc$bec_nms[bgc$bec_nms == "SWB"] <- "Spruce-Willow-Birch"
 bgc$bec_nms[bgc$bec_nms == "BWBS"] <- "Boreal White & Black Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "ESSF"] <- "Engelmann Spruce—Subalpine Fir"
+bgc$bec_nms[bgc$bec_nms ==  "ESSF"] <- "Engelmann Spruce-Subalpine Fir"
 bgc$bec_nms[bgc$bec_nms == "CMA"] <- "Coastal Mountain-heather Alpine"
 bgc$bec_nms[bgc$bec_nms ==  "SBS"] <-  "Sub-Boreal Spruce"
 bgc$bec_nms[bgc$bec_nms ==  "MH"] <-  "Mountain Hemlock"
 bgc$bec_nms[bgc$bec_nms ==  "CWH"] <- "Coastal Western Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "ICH"] <- "Interior Cedar—Hemlock"
+bgc$bec_nms[bgc$bec_nms ==  "ICH"] <- "Interior Cedar-Hemlock"
 bgc$bec_nms[bgc$bec_nms ==  "IMA"] <- "Interior Mountain-heather Alpine"
-bgc$bec_nms[bgc$bec_nms ==  "SBPS"] <- "Sub-Boreal Pine—Spruce"
+bgc$bec_nms[bgc$bec_nms ==  "SBPS"] <- "Sub-Boreal Pine-Spruce"
 bgc$bec_nms[bgc$bec_nms ==  "MS"] <- "Montane Spruce"
 bgc$bec_nms[bgc$bec_nms ==  "IDF"] <- "Interior Douglas-fir"
 bgc$bec_nms[bgc$bec_nms ==  "BG"] <- "Bunchgrass"
@@ -194,7 +194,7 @@ bgcfacetplot <- ggplot(bgc, aes(x = bec_nms, y = percent_designated, fill = cate
         strip.placement = "top",
         strip.text.x = element_text(size = 13),
         axis.title = element_text(size = 14),
-        axis.text = element_text(size = 11),
+        axis.text = element_text(size = 10),
         plot.margin = unit(c(2,2,1,1), "lines"))
 plot(bgcfacetplot)
 
