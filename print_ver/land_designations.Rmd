@@ -83,13 +83,24 @@ Land designations that contribute to conservation are spatially-defined areas es
 }
 \end{center}
 
-Summary of Land Designations that Contribute to Conservation in B.C. (2017)
+\newpage
 
-```{r map, fig.height=8, fig.width=7}
+# Map of Land Designations that Contribute to Conservation in B.C. (2017)
+
+```{r map}
 ```
+```{r fig.height=8, fig.width=7}
+ld_map + guides(fill = "legend")
+```
+
+\newpage
+
+# Summary of Land Designations that Contribute to Conservation in B.C. (2017)
 
 ```{r bcsummary, fig.height=8, fig.width=7}
 ```
+
+\newpage
 
 ```{r bgc_summary, fig.height=8, fig.width=7}
 ```
