@@ -112,12 +112,12 @@ ld_map + theme(legend.position = c(0,0))
     with similar climate and geologic features.
 -   Land designation coverage of British Columbia's 16 biogeoclimatic
     zones and 44 terrestrial ecoregions varies among and within the
-    three land designation categories—Protected Lands, Resource
+    three land designation categories---Protected Lands, Resource
     Exclusion Areas and Spatially Managed Areas.
 
 # Biogeoclimatic Zones and Land Designations that Contribute to Conservation in B.C.
 
-```{r bgc_summary, fig.height=9, fig.width=8}
+```{r bgc_summary, fig.height=8.5, fig.width=8}
 ```
 
 \newpage
@@ -135,11 +135,11 @@ ld_map + theme(legend.position = c(0,0))
         enacted in legislation with a *primary* purpose of the
         *long-term* conservation of nature and cultural values *and*
         that are administered by a government parks and protected areas
-        agency ([BC Parks](/bcparks/) and [Parks
+        agency [BC Parks](http://www.env.gov.bc.ca/bcparks/) and [Parks
         Canada](http://www.pc.gc.ca/eng/index.aspx)). Municipal and
         regional parks and water supply areas are not included in the
         analyses at this time.
-    -   Includes **Other Protected Lands (0.4%)**, such as B.C.’s
+    -   Includes **Other Protected Lands (0.4%)**, such as B.C.'s
         non-governmental organization conservation areas or private
         conservation lands. These are designations and lands
         administered or owned by a [non-governmental conservation
@@ -156,8 +156,8 @@ ld_map + theme(legend.position = c(0,0))
         Act*](http://www.bclaws.ca/EPLibraries/bclaws_new/document/ID/freeside/00_96488_01).
 -   **Resource Exclusion Areas (12.4%)**
     -   Includes designations excluding one or two resource
-        activities—such as forestry, mining or large-scale
-        hydro-electric development—for the purpose of conservation.
+        activities---such as forestry, mining or large-scale
+        hydro-electric development---for the purpose of conservation.
     -   The excluded resource activity is often a primary threat to
         biodiversity in the established area, making the designation an
         important contribution to conservation.
@@ -175,8 +175,8 @@ ld_map + theme(legend.position = c(0,0))
         Act*](http://www.bclaws.ca/EPLibraries/bclaws_new/document/ID/freeside/00_96117_01).
 -   **Spatially Managed Areas (24.5%)**
     -   Includes spatial designations managing or limiting development
-        or a resource activity—such as forestry, mining or large-scale
-        hydro-electric development—for the purpose of conservation, or a
+        or a resource activity---such as forestry, mining or large-scale
+        hydro-electric development---for the purpose of conservation, or a
         spatially-defined management regime in place to preserve
         specified elements of biodiversity but where activity is still
         allowed to occur.
@@ -186,10 +186,8 @@ ld_map + theme(legend.position = c(0,0))
         conditional-harvest [Ungulate Winter
         Range](http://www.env.gov.bc.ca/wld/frpa/uwr/index.html), and
         [Visual Quality
-        Objectives](http://www2.gov.bc.ca/gov/content?id=C45131B6586243CD8A91D399B5712256)—all
-        designated under the [*Forest and Range Practices
-        Act*](http://www.bclaws.ca/Recon/document/ID/freeside/00_02069_01)—
-        and Important Fisheries Watersheds and other [legal objectives
+        Objectives](http://www2.gov.bc.ca/gov/content?id=C45131B6586243CD8A91D399B5712256)---all designated under the [*Forest and Range Practices
+        Act*](http://www.bclaws.ca/Recon/document/ID/freeside/00_02069_01)---and Important Fisheries Watersheds and other [legal objectives
         established for the the Great Bear
         Rainforest](https://www.for.gov.bc.ca/tasb/slrp/plan17.html)
         under the [*Land
@@ -234,13 +232,13 @@ effectiveness of land designations has not been evaluated.
 
 -   [Indicator data: Spatial and Tabular Summaries of Land Designations
     that Contribute to Conservation in
-    B.C.](https://catalogue.data.gov.bc.ca/dataset/6579744d-818c-4b26-839a-28a03edc0d98)
+    B.C.]() (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
 -   [Ecoregions - Ecoregion Ecosystem Classification of British
-    Columbia](https://catalogue.data.gov.bc.ca/dataset/d00389e0-66da-4895-bd56-39a0dd64aa78)
+    Columbia](https://catalogue.data.gov.bc.ca/dataset/d00389e0-66da-4895-bd56-39a0dd64aa78) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
 -   [Biogeoclimatic Ecosystem Classification (BEC)
-    Map](https://catalogue.data.gov.bc.ca/dataset/f358a53b-ffde-4830-a325-a5a03ff672c3)
+    Map](https://catalogue.data.gov.bc.ca/dataset/f358a53b-ffde-4830-a325-a5a03ff672c3) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
 
 Published and Available On-Line at Environmental Reporting BC (September 2017):
-[](http://wwwd.env.gov.bc.ca/soe/indicators/land/land-designations.html)
+[http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html)
 
 Email correspondence to: envreportbc@gov.bc.ca
