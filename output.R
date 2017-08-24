@@ -18,7 +18,6 @@ library(feather) #read in feather file
 library(ggthemes)
 
 
-
 files_list <- list.files("out-shiny", full.names = TRUE)
 file.copy(from = files_list, to = "../land-designations-shinyapp/app/data", overwrite = TRUE)
 
@@ -40,6 +39,11 @@ des_cols <- c("01_PPA"                    = "#00441b",
               "03_Exclude_1_2_Activities" = "#a6d96a",
               "04_Managed"                = "#fdbf6f")
 
+## category labels for legend
+cat_labels_full <- c("01_PPA" = "Parks & Protected Areas",
+                "02_Protected_Other" = "Other Protected Lands",
+                "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
+                "04_Managed" = "Spatially Managed Areas")
 
 ## function to roll-up the two protected (sub)categories
 rollup_category <- function(category) {
@@ -53,8 +57,8 @@ rollup_category <- function(category) {
 ## Static BC Summary map
 
 ## read in datafiles
-ld_df <- read_feather("/out-shiny/gg_ld_ecoreg.feather")
-bc_map <-  read_feather("/out-shiny/gg_bc_bound.feather")
+ld_df <- read_feather("out-shiny/gg_ld_ecoreg.feather")
+bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
 
 ## @knitr map
 
@@ -62,10 +66,12 @@ bc_map <-  read_feather("/out-shiny/gg_bc_bound.feather")
 ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
   geom_polypath(data = bc_map, fill = "grey80", colour = "gray80") +
   geom_polypath(aes(fill = category)) +
-  scale_fill_manual(values = des_cols) +
+  scale_fill_manual(values = des_cols, labels = cat_labels_full, name = NULL) +
   coord_fixed(expand = FALSE) +
   theme_map() +
-  guides(fill = "none")
+  theme(legend.position="none",
+        legend.text = element_text(size = 12))
+#  guides(guide = "none")
 
 ## @knitr map end
 
@@ -262,9 +268,9 @@ eco$eco_nms[eco$eco_nms == "ECR"] <- "Eastern Continental Ranges"
 eco$rollup <- rollup_category(eco$category)
 
 #facet labels
-lab <- c("04_Managed" = "Spatially Managed Areas",
-         "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
-         "Prot" = "Protected Lands")
+lab <- c("04_Managed" = "Spatially\nManaged\nAreas",
+         "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
+         "Prot" = "Protected\nLands")
 
 eco <- eco  %>%
   order_df("eco_nms", "percent_des", fun = max)
