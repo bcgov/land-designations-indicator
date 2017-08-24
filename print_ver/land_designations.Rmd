@@ -90,7 +90,7 @@ Land designations that contribute to conservation are spatially-defined areas es
 ```{r map}
 ```
 ```{r fig.height=8, fig.width=7}
-ld_map + guides(fill = "legend")
+ld_map + guides(fill = "legend") +  scale_fill_manual(values = des_cols)
 ```
 
 \newpage
