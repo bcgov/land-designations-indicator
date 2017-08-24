@@ -10,6 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
+filter_non_designated <- function(x) {
+  dplyr::filter(x, !is.na(category) & category != "")
+}
+
 gg_fortify <- function(x) {
   if (!require("maptools")) stop("maptools is not installed")
   if (!requireNamespace("ggplot2")) stop("ggplot2 is not installed.")
@@ -59,10 +63,10 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 #' foo <- mapshaper_apply(ecoprovinces, "CPRVNCCD", ms_simplify, keep_shapes = TRUE, recombine = FALSE)
 #' lapply(foo, plot)
 #' bar <- recombine_spatial_list(foo)
-mapshaper_apply <- function(spdf, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
+mapshaper_apply <- function(x, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
   if (parallel && !require("parallel")) stop("library 'parallel' not available")
 
-  spdf_list <- split_on_attribute(spdf, column)
+  x_list <- split_on_attribute(x, column)
 
   if (parallel) {
     ## Do the simplification in Parallel:
@@ -73,41 +77,19 @@ mapshaper_apply <- function(spdf, column, fun = ms_simplify, ..., parallel = FAL
 
     clusterEvalQ(cl, library(rmapshaper))
 
-    spdf_list_out <- parLapply(cl, spdf_list, fun, ...)
+    x_list_out <- parLapply(cl, x_list, fun, ...)
   } else {
-    spdf_list_out <- lapply(spdf_list, fun, ...)
+    x_list_out <- lapply(x_list, fun, ...)
   }
 
-  if (!recombine) return(spdf_list_out)
+  if (!recombine) return(x_list_out)
 
-  combine_spatial_list(spdf_list_out)
-}
+  if (inherits(x, "sf")) {
+    return(do.call("rbind", x_list_out))
+  } else {
+    return(combine_spatial_list(x_list_out))
+  }
 
-mapshaper_apply_sf <- function(sf, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
-    if (parallel && !require("parallel")) stop("library 'parallel' not available")
-
-    sf_list <- split_on_attribute(sf, column)
-    gj_list <- lapply(sf_list, geojson_json)
-
-    if (parallel) {
-      ## Do the simplification in Parallel:
-      no_cores <- detectCores() - 1 # Use one less than max cores so we have computing capacity to do other things
-      cl <- makeCluster(no_cores)
-
-      on.exit(stopCluster(cl))
-
-      clusterEvalQ(cl, library(rmapshaper))
-
-      geojson_list_out <- parLapply(cl, gj_list, fun, ...)
-    } else {
-      geojson_list_out <- lapply(gj_list, fun, ...)
-    }
-
-    sf_list_out <- lapply(geojson_list_out, st_read)
-
-    if (!recombine) return(sf_list_out)
-
-    dplyr::bind_rows(sf_list_out)
 }
 
 split_on_attribute <- function(spdf, column) {
@@ -139,6 +121,10 @@ combine_spatial_list <- function(splist, ...) {
 #'
 #' @examples
 clip_only <- function(x, bc) {
+  UseMethod("clip_only")
+}
+
+clip_only.Spatial <- function(x, bc) {
   ## First check if there are any that are completely outside and ditch if so:
   intersects <- rgeos::gIntersects(x, bc, byid = TRUE, returnDense = TRUE)
   intersects <- as.logical(colSums(intersects))
@@ -150,6 +136,66 @@ clip_only <- function(x, bc) {
   clipped <- rmapshaper::ms_clip(x[covers, ], bc)
   rbind(x[!covers, ], clipped[, names(x)])
 }
+
+#' @importFrom sf st_intersects st_covered_by
+clip_only.sf <- function(x, bc) {
+  ## First check if there are any that are completely outside and ditch if so:
+  intersects <- sf::st_intersects(x, bc, sparse = FALSE)
+  intersects <- as.logical(rowSums(intersects))
+  x <- x[intersects, ]
+
+  ## Find the features in x that are not fully covered by the boundary
+  ## and clip them
+  covers <- sf::st_covered_by(bc, x, sparse = FALSE)
+  covers <- as.logical(colSums(covers))
+  clipped <- rmapshaper::ms_clip(geojsonio::geojson_json(x[covers, ]),
+                                 geojsonio::geojson_json(bc))
+  clipped <- sf::read_sf(clipped)
+
+  ## Set the crs of the clipped as it is lost when going through geojson
+  suppressWarnings(sf::st_crs(clipped) <- sf::st_crs(x)[[2]])
+
+  ## Make sure the clipped layer and the non-clipped layer have the
+  ## same geometry column
+  names(clipped)[names(clipped) == attr(clipped, "sf_column")] <- attr(x, "sf_column")
+  attr(clipped, "sf_column") <- attr(x, "sf_column")
+
+  rbind(x[!covers, ], clipped[, setdiff(names(clipped), "rmapshaperid")])
+}
+
+#' Use rmapshaper to dissolve and simplify a complex sf polygon object
+#'
+#' @param x sf object
+#' @param fields fields to dissolve on
+#' @param snap_interval the distance within which to snap adjacent shapes together
+#' @param keep proportion of vertices to keep when simplifying
+#' @param keep_shapes keep shapes when they get very small
+#'
+#' @return sf object
+#' @export
+#'
+#' @examples
+dissolve_and_simplify <- function(x, fields, snap_interval = 1, keep = 0.001, keep_shapes = TRUE) {
+  x$agg_field <- paste(x[[fields[1]]], x[[fields[2]]], sep = "::::")
+
+  x_list <- split_on_attribute(x, "agg_field")
+
+  x_list_diss <- lapply(x_list, rmapshaper::ms_dissolve,
+                        snap = TRUE, snap_interval = snap_interval,
+                        merge_overlaps = TRUE, copy_fields = fields)
+
+  x_list_diss <- lapply(x_list_diss, fix_geo_problems)
+
+  x_list_simp <- lapply(x_list_diss, rmapshaper::ms_simplify,
+                        keep = keep, keep_shapes = keep_shapes)
+
+  x_simp <- do.call("rbind", x_list_simp)
+
+  fix_geo_problems(x_simp[, setdiff(names(x_simp), "agg_field"), drop = FALSE])
+}
+
+
+
 
 get_latest_release <- function(repo_path) {
   if (!require(httr)) stop("You need the 'httr' package to use this function", call. = FALSE)

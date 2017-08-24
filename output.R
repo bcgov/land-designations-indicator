@@ -18,7 +18,7 @@ library(feather) #read in feather file
 library(ggthemes)
 
 
-files_list <- list.files("out-shiny", full.names = TRUE)
+files_list <- list.files("out-shiny", pattern = "\\.feather$|\\.rds$", full.names = TRUE)
 file.copy(from = files_list, to = "../land-designations-shinyapp/app/data", overwrite = TRUE)
 
 # ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
