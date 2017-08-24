@@ -66,9 +66,10 @@ ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
   coord_fixed(expand = FALSE) +
   theme_map() +
   guides(fill = "none")
-plot(ld_map)
 
 ## @knitr map end
+
+plot(ld_map)
 
 ## print BC Summary map to PNG
 png(filename = "out/bc_ld_map.png",
