@@ -67,7 +67,7 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
   ld_t <- read_sf("data/designatedlands.gpkg") %>%
     filter(bc_boundary == "bc_boundary_land_tiled") %>%
     select(-bc_boundary) %>%
-    mutate(area = st_area(.))
+    mutate(calc_area = st_area(.))
   saveRDS(ld_t, ld_t_rds)
   ld_t
 })

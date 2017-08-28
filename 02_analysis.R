@@ -26,8 +26,8 @@ bc_ld_summary <- ld_t %>%
   st_set_geometry(NULL) %>%
   group_by(category) %>%
   filter_non_designated() %>%
-  summarize(area_des_ha = as.numeric(sum(area)) * 1e-4) %>%
-  mutate(percent_des = (area_des_ha * 1e4) / as.numeric(sum(ld_t$area)) * 100) %>%
+  summarize(area_des_ha = as.numeric(sum(calc_area)) * 1e-4) %>%
+  mutate(percent_des = (area_des_ha * 1e4) / as.numeric(sum(ld_t$calc_area)) * 100) %>%
   mutate_if(is.numeric, round, digits = 2) %>%
   write_feather("out-shiny/bc_ld_summary.feather") %>%
   write_csv("out/bc_land_designations_summary.csv")
