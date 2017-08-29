@@ -14,6 +14,27 @@ filter_non_designated <- function(x) {
   dplyr::filter(x, !is.na(category) & category != "")
 }
 
+#' Exctract a only elements of specified type from a GEOMETRYCOLLECTION
+#'
+#' @param x an \code{sf(c)} object that has mixed geometry
+#' @param geometry_type One of "POLYGON", "POINT", "LINESTRING"
+#'
+#' @return a (multi)geometry consisting only of elements of the specified type
+#' @export
+#'
+#' @examples
+st_collectionextract <- function(x, geometry_type = c("POLYGON", "POINT", "LINESTRING")) {
+  if (!inherits(st_geometry(x), "sfc_GEOMETRY")) {
+    stop("x is not a GEOMETRYCOLLECTION")
+  }
+
+  geometry_type <- match.arg(geometry_type)
+
+  types <- c(geometry_type, paste0("MULTI", geometry_type))
+
+  st_cast(x[st_is(x, types),])
+}
+
 gg_fortify <- function(x) {
   if (!require("maptools")) stop("maptools is not installed")
   if (!requireNamespace("ggplot2")) stop("ggplot2 is not installed.")
