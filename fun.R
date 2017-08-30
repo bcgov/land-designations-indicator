@@ -14,7 +14,7 @@ filter_non_designated <- function(x) {
   dplyr::filter(x, !is.na(category) & category != "")
 }
 
-#' Exctract a only elements of specified type from a GEOMETRYCOLLECTION
+#' Exctract only elements of specified type from a GEOMETRYCOLLECTION
 #'
 #' @param x an \code{sf(c)} object that has mixed geometry
 #' @param geometry_type One of "POLYGON", "POINT", "LINESTRING"
@@ -24,15 +24,44 @@ filter_non_designated <- function(x) {
 #'
 #' @examples
 st_collectionextract <- function(x, geometry_type = c("POLYGON", "POINT", "LINESTRING")) {
-  if (!inherits(st_geometry(x), "sfc_GEOMETRY")) {
-    stop("x is not a GEOMETRYCOLLECTION")
-  }
 
   geometry_type <- match.arg(geometry_type)
 
   types <- c(geometry_type, paste0("MULTI", geometry_type))
 
-  st_cast(x[st_is(x, types),])
+  if (is(st_geometry(x), paste0("sfc_", types))) {
+    warning("x is already of type ", geometry_type, ".")
+    return(x)
+  }
+
+  # Cast to GEOMETRYCOLLECTION if not already (e.g., if it is sfc_GEOMETRY)
+  if (!is(st_geometry(x), "sfc_GEOMETRYCOLLECTION")) {
+    x <- st_cast(x, "GEOMETRYCOLLECTION")
+  }
+
+  ## Deal with sfg ojects
+  if (is(x, "sfg")) {
+    matches <- vapply(x, st_is, types, FUN.VALUE = logical(1))
+    ret <- x[which(matches)]
+    if (length(ret) == 1) {
+      return(ret[[1]])
+    } else {
+      return(st_sfc(ret))
+    }
+  }
+
+  ## Cast GEOMETRYCOLLECTION into all components
+  gc_casted <- st_cast(x)
+
+  ## Keep only components that match input type
+  if (is(gc_casted, "sf")) {
+    gc_types <- gc_casted[st_is(gc_casted, types), ]
+  } else if (is(gc_casted, "sfc")) {
+    gc_types <- gc_casted[st_is(gc_casted, types)]
+  }
+
+  ## Cast to specified (MULTI) type
+  st_cast(gc_types)
 }
 
 gg_fortify <- function(x) {

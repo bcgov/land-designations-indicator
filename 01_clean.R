@@ -96,18 +96,6 @@ eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
 
 # Simplification and aggregation for visualizations -----------------------
 
-ld_agg <- ld_t %>%
-  filter(!is.na(category)) %>%
-  group_by(category, designation) %>%
-  summarise()
-saveRDS(ld_agg, "tmp/ld_agg.rds")
-
-ld_agg_cat <- ld_t %>%
-  filter(!is.na(category)) %>%
-  group_by(category) %>%
-  summarise()
-saveRDS(ld_agg_cat, "tmp/ld_agg_cat.rds")
-
 ## Simplify bc boundary, fortify for ggplot and write to feather file
 bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
 bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
@@ -177,60 +165,66 @@ bec_zone_leaflet <- tryCatch(readRDS(bec_zone_leaflet_rds), error = function(e) 
   bec_zone_leaflet
 })
 
-## Aggregate by ecoregion
-ecoreg_ld_agg_rds <- "tmp/ecoreg_ld_agg.rds"
-ld_ecoreg_agg <- tryCatch(readRDS(ecoreg_ld_agg_rds), error = function(e) {
-  ld_ecoreg_agg <- eco_ld %>%
+## Aggregate the full Land Designations file
+ld_agg_rds <- "tmp/ld_agg.rds"
+ld_agg <- tryCatch(readRDS(ld_agg_rds), error = function(e) {
+    ld_agg <- ld_t %>%
     filter_non_designated() %>%
-    group_by(parent_ecoregion_code, category) %>%
-    summarize()
-
-  saveRDS(ld_ecoreg_agg, ecoreg_ld_agg_rds)
-  ld_ecoreg_agg
+    group_by(category, designation) %>%
+    summarise()
+  saveRDS(ld_agg, ld_agg_rds)
+  ld_agg
 })
 
-## Simplify ld x ecoregions
-ld_ecoreg_simp_rds <- "tmp/ld_ecoreg_simp.rds"
-ld_ecoreg_simp <- tryCatch(readRDS(ld_ecoreg_simp_rds), error = function(e) {
-  ld_ecoreg_simp <- mapshaper_apply(ld_ecoreg_agg, "parent_ecoregion_code", ms_simplify,
-                                    keep = 0.005, keep_shapes = TRUE,
-                                    parallel = FALSE, recombine = TRUE) %>%
+## Aggreate by category
+ld_agg_cat_rds <- "tmp/ld_agg_cat.rds"
+ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
+  ld_agg_cat <- ld_t %>%
+    filter_non_designated() %>%
     fix_geo_problems() %>%
-    foo <- group_by(ld_ecoreg_simp, ecoregion = parent_ecoregion_code, category) %>%
-    summarize()
-
-  saveRDS(ld_ecoreg_simp, ld_ecoreg_simp_rds)
-  ld_ecoreg_simp
+    group_by(category) %>%
+    summarise()
+  saveRDS(ld_agg_cat, ld_agg_cat_rds)
+  ld_agg_cat
 })
 
-## Simplify bec x ld
-ld_bec_simp_rds <- "tmp/ld_bec_simp.rds"
-ld_bec_simp <- tryCatch(readRDS(ld_bec_simp_rds), error = function(e) {
-  ld_bec_simp <- mapshaper_apply(bec_ld_agg_zone, "zone", ms_simplify,
-                                 keep = 0.005, keep_shapes = TRUE,
-                                 parallel = FALSE, recombine = TRUE) %>%
-    fix_geo_problems() %>%
-    group_by(zone, category) %>%
-    summarize()
-  saveRDS(ld_bec_simp, ld_bec_simp_rds)
-  ld_bec_simp
+## Simplify the provincial-scale categories
+ld_simp_rds <- "tmp/ld_simp.rds"
+ld_simp <- tryCatch(readRDS(ld_simp), error = function(e) {
+  ld_simp <- mapshaper_apply(ld_agg_cat, "category", ms_simplify, keep = 0.01) %>%
+    fix_geo_problems()
+  saveRDS(ld_simp, ld_simp_rds)
+  ld_simp
 })
 
-## Simplify ld x ecoregion and ld x bec more, fortify for use with ggplot, and write out
-ld_ecoreg_simp_more <- ms_simplify(ld_ecoreg_simp, keep = 0.05, keep_shapes = TRUE) %>%
+## Save simplified ld object as ggplot-able feather file
+gg_ld <- as(ld_simp, "Spatial") %>%
+  gg_fortify() %>%
+  write_feather("out/gg_ld_simp.feather")
+
+## Simplify a bit more for shiny plotting
+ld_simp_more <- ms_simplify(ld_simp, keep = 0.05, explode = TRUE, keep_shapes = TRUE) %>%
+  fix_geo_problems() %>%
+  group_by(category) %>%
+  summarise()
+
+## Intersect simplified ld with simplified bec to get viz object:
+ld_bec_simp <- st_intersection(bec_zone_simp, ld_simp_more) %>%
+  st_collectionextract("POLYGON") %>%
+  select(ZONE, category) %>%
   fix_geo_problems()
 
+gg_ld_bec <- as(ld_bec_simp, "Spatial") %>%
+  gg_fortify() %>%
+  write_feather("out-shiny/gg_ld_bec_new.feather")
 
-ld_bec_simp_more <- ms_simplify(ld_bec_simp, keep = 0.05, keep_shapes = TRUE) %>%
+## Intersect simplified ld with simplified ecoregions to get viz object:
+ld_ecoreg_simp <- st_intersection(ecoregions_t_simp, ld_simp_more) %>%
+  st_collectionextract("POLYGON") %>%
+  select(CRGNCD, category) %>%
   fix_geo_problems()
 
-## Once ggplot2::geom_sf hits CRAN we shouldn't need to do this
-gg_ld_ecoreg <- as(ld_ecoreg_simp_more, "Spatial") %>%
+gg_ld_ecoreg <- as(ld_ecoreg_simp, "Spatial") %>%
+  fix_geo_problems() %>%
   gg_fortify() %>%
-  rename(CRGNCD = parent_ecoregion_code) %>%
-  write_feather("out-shiny/gg_ld_ecoreg.feather")
-
-gg_ld_bec <- as(ld_bec_simp_more, "Spatial") %>%
-  gg_fortify() %>%
-  rename(ZONE = zone) %>%
-  write_feather("out-shiny/gg_ld_bec.feather")
+  write_feather("out-shiny/gg_ld_ecoreg_new.feather")
