@@ -112,8 +112,10 @@ ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function
     fix_geo_problems() %>%
     st_set_crs(3005) %>%
     st_transform(4326) %>%
-    mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM))))
-  saveRDS(as(eco_t_simp_leaflet, "Spatial"), eco_leaflet_rds)
+    mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM)))) %>%
+    group_by(CRGNCD, CRGNNM) %>%
+    summarise()
+  saveRDS(as(st_cast(eco_t_simp_leaflet, "Spatial")), eco_leaflet_rds)
   eco_t_simp_leaflet
 })
 
@@ -190,7 +192,7 @@ ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
 
 ## Simplify the provincial-scale categories
 ld_simp_rds <- "tmp/ld_simp.rds"
-ld_simp <- tryCatch(readRDS(ld_simp), error = function(e) {
+ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
   ld_simp <- mapshaper_apply(ld_agg_cat, "category", ms_simplify, keep = 0.01) %>%
     fix_geo_problems()
   saveRDS(ld_simp, ld_simp_rds)
