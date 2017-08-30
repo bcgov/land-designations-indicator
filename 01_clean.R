@@ -218,7 +218,7 @@ ld_bec_simp <- st_intersection(bec_zone_simp, ld_simp_more) %>%
 
 gg_ld_bec <- as(ld_bec_simp, "Spatial") %>%
   gg_fortify() %>%
-  write_feather("out-shiny/gg_ld_bec_new.feather")
+  write_feather("out-shiny/gg_ld_bec.feather")
 
 ## Intersect simplified ld with simplified ecoregions to get viz object:
 ld_ecoreg_simp <- st_intersection(ecoregions_t_simp, ld_simp_more) %>%
@@ -229,4 +229,4 @@ ld_ecoreg_simp <- st_intersection(ecoregions_t_simp, ld_simp_more) %>%
 gg_ld_ecoreg <- as(ld_ecoreg_simp, "Spatial") %>%
   fix_geo_problems() %>%
   gg_fortify() %>%
-  write_feather("out-shiny/gg_ld_ecoreg_new.feather")
+  write_feather("out-shiny/gg_ld_ecoreg.feather")
