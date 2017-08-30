@@ -1,6 +1,6 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-<div id="devex-badge"><a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a></div>
+<a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a>
 
 ------------------------------------------------------------------------
 
@@ -33,13 +33,39 @@ Other than `bcmaps`\*, all required packages are available from CRAN
 
 ### Data
 
-Source data is obtained by running the script [here](https://github.com/bcgov/conservationlands) The outputs from that script should be:
+Input data is obtained by running the python script [here](https://github.com/bcgov/designatedlands) using the following commands:
 
--   `land_designations.gdb` - the land designations layer
--   `lands_bec.gdb` - the land designations layer intersected with BEC (using the `overlay` command in the conservationlands tool)
--   `lands_ecosections.gdb`- the land designations layer intersected with ecosections (using the `overlay` command in the conservationlands tool)
+    ## Download the Biogeoclimatic Zone layer from here: 
+    ## https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map
+    ## and store it in your working directory
 
-Place these in the `data` folder of this repository.
+    ## Download the Ecosection layer from here: 
+    ## https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia
+    ## and store it in your working directory
+
+    python designatedlands.py create_db
+
+    python designatedlands.py load
+
+    python designatedlands.py process
+
+    python designatedlands.py dump --out_file=designatedlands.gpkg
+
+    python designatedlands.py overlay BEC_BIOGEOCLIMATIC_POLY.gdb --in_layer=WHSE_FOREST_VEGETATION_BEC_BIOGEOCLIMATIC_POLY_polygon --new_layer_name=bec
+
+    python designatedlands.py overlay ERC_ECOSECTIONS_SP.gdb --in_layer=WHSE_TERRESTRIAL_ECOLOGY_ERC_ECOSECTIONS_SP_polygon --new_layer_name=eco
+
+    python designatedlands.py dump --out_table=bec_overlay --out_file=lands_bec.gpkg --aggregate_fields="bc_boundary,designation,category,zone,subzone,variant,phase,map_label"
+
+    python designatedlands.py dump --out_table=eco_overlay --out_file=lands_eco.gpkg --aggregate_fields="bc_boundary,designation,category,parent_ecoregion_code,ecosection_code,ecosection_name"
+
+The outputs from that script should be:
+
+-   `designatedlands.gpkg` - the land designations layer
+-   `lands_bec.gpkg` - the land designations layer intersected with BEC (using the `overlay` command in the conservationlands tool)
+-   `lands_eco.gpkg`- the land designations layer intersected with ecosections (using the `overlay` command in the conservationlands tool)
+
+Place these in the `data` folder of this repository. You will also require `BEC_BIOGEOCLIMATIC_POLY.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map) and `ERC_ECOSECTIONS_SP.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia)
 
 The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sources.csv) that lists all of the source land designation layers used in the analysis.
 
