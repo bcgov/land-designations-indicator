@@ -57,7 +57,7 @@ rollup_category <- function(category) {
 ## Static BC Summary map
 
 ## read in datafiles
-ld_df <- read_feather("out-shiny/gg_ld_ecoreg.feather")
+ld_df <- read_feather("out/gg_ld_simp.feather")
 bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
 
 ## @knitr map
