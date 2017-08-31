@@ -54,7 +54,7 @@ bec_cat_summary <- bec_ld %>% st_set_geometry(NULL) %>%
   write_csv("out/bc_bgc_land_designations_summary.csv")
 
 bec_zone_cat_summary <- bec_cat_summary %>%
-  group_by(ZONE, category) %>%
+  group_by(ZONE, ZONE_NAME, category) %>%
   summarize(area_designated_ha = sum(area_des_ha, na.rm = TRUE),
             zone_area_ha = sum(bec_area, na.rm = TRUE) * 1e-4,
             percent_designated = as.numeric(area_designated_ha / zone_area_ha * 100)) %>%
@@ -70,7 +70,7 @@ bec_zone_sizes <- bec_t%>% st_set_geometry(NULL) %>%
 # Ecoregions and ecosections ## TODO - add ecosection_name back in
 
 ecosec_sizes <- eco_ld %>% st_set_geometry(NULL) %>%
-  group_by(parent_ecoregion_code, # ecosection_name,
+  group_by(parent_ecoregion_code, ecosection_name,
            ecosection_code) %>%
   summarize(ecosec_area = sum(calc_area, na.rm = TRUE))
 
@@ -80,12 +80,11 @@ ecoreg_sizes <- ecosec_sizes %>%
 
 ecosection_cat_summary <- eco_ld %>% st_set_geometry(NULL) %>%
   filter_non_designated() %>%
-  right_join(ecosec_sizes, by = c("parent_ecoregion_code", # "ecosection_name",
+  right_join(ecosec_sizes, by = c("parent_ecoregion_code", "ecosection_name",
                                   "ecosection_code")) %>%
-  complete(nesting(parent_ecoregion_code, # ecosection_name,
+  complete(nesting(parent_ecoregion_code, ecosection_name,
                    ecosection_code, ecosec_area), category) %>%
-  group_by(category, parent_ecoregion_code, # ecosection_name,
-           ecosection_code) %>%
+  group_by(category, parent_ecoregion_code, ecosection_code, ecosection_name) %>%
   summarize(area_des = sum(calc_area, na.rm = TRUE),
             ecosec_area = sum(ecosec_area, na.rm = TRUE),
             percent_des = as.numeric(area_des / ecosec_area * 100),
@@ -98,5 +97,8 @@ ecoregion_cat_summary <- ecosection_cat_summary %>%
   right_join(ecoreg_sizes, by = "ecoregion_code") %>%
   mutate(percent_des = as.numeric(area_des / ecoreg_area * 100),
             area_des_ha = area_des * 1e-4) %>%
+  left_join(select(bcmaps::ecoregions@data, ecoregion_code = CRGNCD, ecoregion_name = CRGNNM)) %>%
+  mutate(ecoregion_name = tools::toTitleCase(tolower(ecoregion_name))) %>%
+  select(ecoregion_code, ecoregion_name, category, everything()) %>%
   write_feather("out-shiny/ld_ecoreg_summary.feather") %>%
   write_csv("out/bc_ecoregions_land_designations_summary.csv")
