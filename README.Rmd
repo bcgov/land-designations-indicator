@@ -1,5 +1,7 @@
 ---
-output: github_document
+output:
+  github_document:
+    html_preview: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -9,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 <div id="devex-badge"><a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a></div>
----
 
 # Analysis of land designations that contribute to conservation
 
@@ -91,7 +92,7 @@ are copied to the `out-shiny` directory.
 `../land-designations-shinyapp/app/data` folder, assuming the folder exists in 
 same parent directory as this repository
 
-## Pathway to open source
+## Pathway to Open Source
 
 Once the data are available, this repo will be moved to the bcgov org and 
 developed in the open.

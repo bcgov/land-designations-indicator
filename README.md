@@ -2,8 +2,6 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a>
 
-------------------------------------------------------------------------
-
 Analysis of land designations that contribute to conservation
 =============================================================
 
@@ -76,7 +74,7 @@ The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sourc
 -   Summary csv files are copied to the `out` directory, and summary objects for use in the [land designations Shiny app](https://github.com/bcgov/land-designations-shinyapp) are copied to the `out-shiny` directory.
 -   The `output.R` file will copy the files from `out-shiny` to the `../land-designations-shinyapp/app/data` folder, assuming the folder exists in same parent directory as this repository
 
-Pathway to open source
+Pathway to Open Source
 ----------------------
 
 Once the data are available, this repo will be moved to the bcgov org and developed in the open.
