@@ -108,14 +108,14 @@ bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(
 ## Create simplified versions of ecoregions for leaflet map
 eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
 ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
-  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.003) %>%
+  eco_t_simp_leaflet <- ms_simplify(ecoregions_t[,c("CRGNCD", "CRGNNM")], 0.001) %>%
     fix_geo_problems() %>%
     st_set_crs(3005) %>%
     st_transform(4326) %>%
     mutate(CRGNNM = tools::toTitleCase(tolower(as.character(CRGNNM)))) %>%
     group_by(CRGNCD, CRGNNM) %>%
     summarise()
-  saveRDS(as(st_cast(eco_t_simp_leaflet, "Spatial")), eco_leaflet_rds)
+  saveRDS(as(st_cast(eco_t_simp_leaflet), "Spatial"), eco_leaflet_rds)
   eco_t_simp_leaflet
 })
 
