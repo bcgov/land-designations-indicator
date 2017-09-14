@@ -147,26 +147,6 @@ bgc <- read.csv("out/bc_bgc_zone_land_designations_summary.csv", stringsAsFactor
 
 ## @knitr bgc_summary
 
-## Adding full BGC names to dataframe
-bgc$bec_nms <- bgc$ZONE
-bgc$bec_nms[bgc$bec_nms == "BAFA"] <- "Boreal Altai Fescue Alpine"
-bgc$bec_nms[bgc$bec_nms == "SWB"] <- "Spruce-Willow-Birch"
-bgc$bec_nms[bgc$bec_nms == "BWBS"] <- "Boreal White & Black Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "ESSF"] <- "Engelmann Spruce-Subalpine Fir"
-bgc$bec_nms[bgc$bec_nms == "CMA"] <- "Coastal Mountain-heather Alpine"
-bgc$bec_nms[bgc$bec_nms ==  "SBS"] <-  "Sub-Boreal Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "MH"] <-  "Mountain Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "CWH"] <- "Coastal Western Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "ICH"] <- "Interior Cedar-Hemlock"
-bgc$bec_nms[bgc$bec_nms ==  "IMA"] <- "Interior Mountain-heather Alpine"
-bgc$bec_nms[bgc$bec_nms ==  "SBPS"] <- "Sub-Boreal Pine-Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "MS"] <- "Montane Spruce"
-bgc$bec_nms[bgc$bec_nms ==  "IDF"] <- "Interior Douglas-fir"
-bgc$bec_nms[bgc$bec_nms ==  "BG"] <- "Bunchgrass"
-bgc$bec_nms[bgc$bec_nms ==  "PP"] <- "Ponderosa Pine"
-bgc$bec_nms[bgc$bec_nms ==  "CDF"] <- "Coastal Douglas-fir"
-
-
 ##roll-up two protected categories
 bgc$rollup <- rollup_category(bgc$category)
 
@@ -177,10 +157,10 @@ lab <- c("04_Managed" = "Spatially Managed Areas",
 
 ## order bars within facets
 bgc <- bgc  %>%
-    order_df("bec_nms", "percent_designated", fun = max)
+    order_df("ZONE_NAME", "percent_designated", fun = max)
 
 ## bgc facet plot
-bgcfacetplot <- ggplot(bgc, aes(x = bec_nms, y = percent_designated, fill = category)) +
+bgcfacetplot <- ggplot(bgc, aes(x = ZONE_NAME, y = percent_designated, fill = category)) +
   geom_col() +
   facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
   scale_fill_manual(values = des_cols, guide =FALSE) +
@@ -212,58 +192,6 @@ eco <- read.csv("out/bc_ecoregions_land_designations_summary.csv", stringsAsFact
 
 ## @knitr ecoreg_summary
 
-## Adding full Ecoregion names to dataframe
-eco$eco_nms <- eco$ecoregion_code
-
-eco$eco_nms[eco$eco_nms == "TPC"] <- "Transitional Pacific"
-eco$eco_nms[eco$eco_nms == "HCS"] <- "Hecate Continental Shelf"
-eco$eco_nms[eco$eco_nms == "COG"] <-  "Coastal Gap"
-eco$eco_nms[eco$eco_nms == "EHM"] <- "Eastern Hazelton Mountains"
-eco$eco_nms[eco$eco_nms == "OPS"] <- "Outer Pacific Shelf"
-eco$eco_nms[eco$eco_nms == "NRM"] <- "Northern Canadian Rocky Mountains"
-eco$eco_nms[eco$eco_nms == "OKH"] <- "Okanogan Highland"
-eco$eco_nms[eco$eco_nms == "CMI"] <- "Chugach Mountains and Icefields"
-eco$eco_nms[eco$eco_nms == "STE"] <- "St Elias Mountains"
-eco$eco_nms[eco$eco_nms == "BOU"] <- "Boundary Ranges"
-eco$eco_nms[eco$eco_nms == "YSL"] <- "Yukon Southern Lakes"
-eco$eco_nms[eco$eco_nms == "NUP"] <- "Northern Alberta Upland"
-eco$eco_nms[eco$eco_nms == "PEM"] <- "Pelly Mountains"
-eco$eco_nms[eco$eco_nms == "LIB"] <- "Liard Basin"
-eco$eco_nms[eco$eco_nms == "HHI"] <- "Hyland Highland"
-eco$eco_nms[eco$eco_nms == "HSL"] <-  "Hay-Slave Lowland"
-eco$eco_nms[eco$eco_nms == "BMP"] <- "Boreal Mountains and Plateaus"
-eco$eco_nms[eco$eco_nms == "MPL"] <- "Muskwa Plateau"
-eco$eco_nms[eco$eco_nms == "CAU"] <- "Central Alberta Upland"
-eco$eco_nms[eco$eco_nms == "CRM"] <- "Central Canadian Rocky Mountains"
-eco$eco_nms[eco$eco_nms == "PRB"] <- "Peace River Basin"
-eco$eco_nms[eco$eco_nms == "OMM"] <- "Omineca Mountains"
-eco$eco_nms[eco$eco_nms == "SKM"] <- "Skeena Mountains"
-eco$eco_nms[eco$eco_nms == "FAB"] <- "Fraser Basin"
-eco$eco_nms[eco$eco_nms == "NRA"] <-  "Nass Ranges"
-eco$eco_nms[eco$eco_nms == "SBC"] <- "Sub-Arctic Pacific"
-eco$eco_nms[eco$eco_nms == "FAP"] <- "Fraser Plateau"
-eco$eco_nms[eco$eco_nms == "WRA"] <- "Western Continental Ranges"
-eco$eco_nms[eco$eco_nms == "GWH"] <- "Gwaii Haanas"
-eco$eco_nms[eco$eco_nms == "CHR"] <- "Chilcotin Ranges"
-eco$eco_nms[eco$eco_nms == "SRT"] <- "Southern Rocky Mountain Trench"
-eco$eco_nms[eco$eco_nms == "IPS"] <- "Inner Pacific Shelf"
-eco$eco_nms[eco$eco_nms == "ITR"] <- "Interior Transition Ranges"
-eco$eco_nms[eco$eco_nms == "PAC"] <- "Pacific Ranges"
-eco$eco_nms[eco$eco_nms == "TOP"] <- "Thompson-Okanagan Plateau"
-eco$eco_nms[eco$eco_nms == "NCM"] <- "Northern Columbia Mountains"
-eco$eco_nms[eco$eco_nms == "NCR"] <- "Northern Cascade Ranges"
-eco$eco_nms[eco$eco_nms == "EVI"] <- "Eastern Vancouver Island"
-eco$eco_nms[eco$eco_nms == "PTR"] <- "Purcell Transitional Ranges"
-eco$eco_nms[eco$eco_nms == "NCD"] <- "Northern Continental Divide"
-eco$eco_nms[eco$eco_nms == "LOM"] <- "Lower Mainland"
-eco$eco_nms[eco$eco_nms == "WVI"] <- "Western Vancouver Island"
-eco$eco_nms[eco$eco_nms == "GPB"] <- "Georgia-Puget Basin"
-eco$eco_nms[eco$eco_nms == "YSH"] <- "Yukon-Stikine Highlands"
-eco$eco_nms[eco$eco_nms == "COH"] <- "Columbia Highlands"
-eco$eco_nms[eco$eco_nms == "SBF"] <- "Selkirk-Bitterroot Foothills"
-eco$eco_nms[eco$eco_nms == "SAU"] <- "Southern Alberta Upland"
-eco$eco_nms[eco$eco_nms == "ECR"] <- "Eastern Continental Ranges"
-
 ##roll-up two protected categories
 eco$rollup <- rollup_category(eco$category)
 
@@ -273,10 +201,10 @@ lab <- c("04_Managed" = "Spatially\nManaged\nAreas",
          "Prot" = "Protected\nLands")
 
 eco <- eco  %>%
-  order_df("eco_nms", "percent_des", fun = max)
+  order_df("ecoregion_name", "percent_des", fun = max)
 
 ##ecoregion facet plot
-ecofacetplot <- ggplot(eco, aes(x = eco_nms, y = percent_des, fill = category)) +
+ecofacetplot <- ggplot(eco, aes(x = ecoregion_name, y = percent_des, fill = category)) +
   geom_col() +
   facet_wrap(~rollup, nrow=1, labeller = labeller(rollup = lab)) +
   scale_fill_manual(values = des_cols, guide =FALSE) +
