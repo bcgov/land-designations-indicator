@@ -12,7 +12,7 @@
 
 library(ggplot2)
 library(ggpolypath)
-library(envreportutils) #theme_soe_facet
+library(envreportutils) #theme_soe_facet & png_retina
 library(magrittr) # %>%
 library(feather) #read in feather file
 library(ggthemes)
@@ -77,8 +77,8 @@ ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
 
 plot(ld_map)
 
-## print BC Summary map to PNG
-png(filename = "out/bc_ld_map.png",
+## print BC Summary map to PNG at retina quality
+png_retina(filename = "out/bc_ld_map.png",
     width = 500, height = 500, units = "px")
 ld_map
 dev.off()
@@ -134,8 +134,8 @@ plot(bcsumplot)
 
 ## @knitr bcsummary end
 
-## print BC Summary plot to PNG
-png(filename = "out/bc_sum_plot.png",
+## print BC Summary plot to PNG at retina quality
+png_retina(filename = "out/bc_sum_plot.png",
     width = 500, height = 500, units = "px")
 bcsumplot
 dev.off()
@@ -180,8 +180,8 @@ plot(bgcfacetplot)
 
 ## @knitr bgc_summary end
 
-## print BGC facet plot to PNG
-png(filename = "out/bgc_facet_plot.png",
+## print BGC facet plot to PNG at retina quality
+png_retina(filename = "out/bgc_facet_plot.png",
     width = 900, height = 700, units = "px")
 bgcfacetplot
 dev.off()
@@ -224,8 +224,8 @@ plot(ecofacetplot)
 
 ## @knitr ecoreg_summary end
 
-## print facet plot to PNG
-png(filename = "out/ecoregion_facet_plot.png",
+## print facet plot to PNG at retina quality
+png_retina(filename = "out/ecoregion_facet_plot.png",
     width = 900, height = 700, units = "px")
 ecofacetplot
 dev.off()
