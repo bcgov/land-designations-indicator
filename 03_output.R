@@ -153,7 +153,7 @@ plot(bcsumplot)
 # bcsumplot
 # dev.off()
 
-## print BC Summary map to SVG
+## print BC Summary plot to SVG
 svglite("./out/bc_sum_plot.svg", width = 500 / 72, height = 500 / 72)
 bcsumplot
 dev.off()
