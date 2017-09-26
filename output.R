@@ -16,6 +16,7 @@ library(envreportutils) #theme_soe_facet & png_retina
 library(magrittr) # %>%
 library(feather) #read in feather file
 library(ggthemes)
+library(svglite) #print to SVG
 
 
 files_list <- list.files("out-shiny", pattern = "\\.feather$|\\.rds$", full.names = TRUE)
@@ -70,7 +71,8 @@ ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
   coord_fixed(expand = FALSE) +
   theme_map() +
   theme(legend.position="none",
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12),
+        plot.margin = unit(c(30,0,0,0),"mm"))
 #  guides(guide = "none")
 
 ## @knitr map end
@@ -83,7 +85,18 @@ png_retina(filename = "out/bc_ld_map.png",
 ld_map
 dev.off()
 
+# OR
 
+png(filename = "out/bc_ld_map.png",
+   width = 1000, height = 1000, units = "px")
+ld_map
+dev.off()
+
+
+## print BC Summary map to SVG - file size too big
+# svglite("./out/bc_ld_map.svg", width = 836 / 72, height = 560 / 72)
+# ld_map
+# dev.off()
 
 
 ## Static bar chart for provincial summary by category
@@ -135,8 +148,13 @@ plot(bcsumplot)
 ## @knitr bcsummary end
 
 ## print BC Summary plot to PNG at retina quality
-png_retina(filename = "out/bc_sum_plot.png",
-    width = 500, height = 500, units = "px")
+# png_retina(filename = "out/bc_sum_plot.png",
+#     width = 500, height = 500, units = "px")
+# bcsumplot
+# dev.off()
+
+## print BC Summary map to SVG
+svglite("./out/bc_sum_plot.svg", width = 500 / 72, height = 500 / 72)
 bcsumplot
 dev.off()
 
