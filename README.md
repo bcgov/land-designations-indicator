@@ -12,22 +12,22 @@ Usage
 
 ### R packages required:
 
-Other than `bcmaps`\*, all required packages are available from CRAN
+Other than `bcmaps` and `envreportutils`, all required packages are available from CRAN
 
--   rgdal
--   sp
--   rgeos
--   raster
--   maptools
--   bcmaps \*(install with `devtools::install_github("bcgov/bcmaps")`)
+-   bcmaps (install with `devtools::install_github("bcgov/bcmaps")`)
+-   envreportutils (install with `devtools::install_github("bcgov/envreportutils")`)
 -   geojsonio
 -   rmapshaper
 -   feather
 -   readr
 -   dplyr
 -   tidyr
+-   sf
 -   ggplot2
 -   ggpolypath
+-   magrittr
+-   ggthemes
+-   svglite
 
 ### Data
 
