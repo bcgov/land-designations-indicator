@@ -80,7 +80,7 @@ ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
 plot(ld_map)
 
 ## print BC Summary map to PNG at retina quality
-png_retina(filename = "out/bc_ld_map.png",
+png_retina(filename = "out/bc_ld_map_png_retina.png",
     width = 500, height = 500, units = "px")
 ld_map
 dev.off()
@@ -154,8 +154,8 @@ plot(bcsumplot)
 # dev.off()
 
 ## print BC Summary plot to SVG
-svglite("./out/bc_sum_plot.svg", width = 500 / 72, height = 500 / 72)
-bcsumplot
+svg_px("./out/bc_sum_plot.svg", width = 500, height = 500)
+plot(bcsumplot)
 dev.off()
 
 
