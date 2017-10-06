@@ -106,3 +106,35 @@ ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
 gg_ld <- as(ld_simp, "Spatial") %>%
   gg_fortify() %>%
   write_feather("tmp/gg_ld_simp.feather")
+
+## Aggregate the full Land Designations file
+ld_agg_rds <- "tmp/ld_agg.rds"
+ld_agg <- tryCatch(readRDS(ld_agg_rds), error = function(e) {
+  ld_agg <- ld_t %>%
+    filter_non_designated() %>%
+    group_by(category, designation) %>%
+    summarise() %>%
+    ungroup()
+  saveRDS(ld_agg, ld_agg_rds)
+  ld_agg
+})
+
+## Aggreate by category
+ld_agg_cat_rds <- "tmp/ld_agg_cat.rds"
+ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
+  ld_agg_cat <- ld_t %>%
+    filter_non_designated() %>%
+    fix_geo_problems() %>%
+    group_by(category) %>%
+    summarise()
+  saveRDS(ld_agg_cat, ld_agg_cat_rds)
+  ld_agg_cat
+})
+
+# Save the aggregated land designations file as gpkg and shp
+st_write(ld_agg, "out/land_designations.gpkg")
+st_write(ld_agg, "out/land_designations.shp")
+files_to_zip <- list.files("out", pattern = "land_designations\\.(shp|dbf|prj|shx)$",
+                           full.names = TRUE)
+zip("out/land_designations_shp.zip", files_to_zip)
+file.remove(files_to_zip)
