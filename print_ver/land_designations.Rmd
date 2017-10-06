@@ -21,7 +21,7 @@ library(knitr) #for knitting to PDF
 ## Find the root of the project so we can find the files in the directory tree.
 root <- rprojroot::is_rstudio_project
 
-read_chunk(root$find_file("03_output.R"))
+read_chunk(root$find_file("04_static_output.R"))
 
 ## read in datafiles
 ld_df <- read_feather(root$find_file("out-shiny/gg_ld_ecoreg.feather"))
