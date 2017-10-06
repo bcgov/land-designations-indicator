@@ -23,15 +23,6 @@ source("fun.R")
 dir.create("out", showWarnings = FALSE)
 dir.create("out-shiny", showWarnings = FALSE)
 
-## Simplify bc boundary, fortify for ggplot and write to feather file
-bc_bound_simp_feather <- "out-shiny/gg_bc_bound.feather"
-bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
-  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
-    as("Spatial") %>%
-    gg_fortify() %>%
-    write_feather(bc_bound_simp_feather)
-})
-
 ## Create simplified versions of ecoregions for leaflet map
 eco_leaflet_rds <- "out-shiny/ecoregions_t_leaflet.rds"
 ecoregions_t_simp_leaflet <- tryCatch(readRDS(eco_leaflet_rds), error = function(e) {
@@ -125,21 +116,7 @@ ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
   ld_agg_cat
 })
 
-## Simplify the provincial-scale categories
-ld_simp_rds <- "tmp/ld_simp.rds"
-ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
-  ld_simp <- mapshaper_apply(ld_agg_cat, "category", ms_simplify, keep = 0.01) %>%
-    fix_geo_problems()
-  saveRDS(ld_simp, ld_simp_rds)
-  ld_simp
-})
-
-## Save simplified ld object as ggplot-able feather file
-gg_ld <- as(ld_simp, "Spatial") %>%
-  gg_fortify() %>%
-  write_feather("out/gg_ld_simp.feather")
-
-## Simplify a bit more for shiny plotting
+## Simplify ld a bit more for shiny plotting
 ld_simp_more <- ms_simplify(ld_simp, keep = 0.05, explode = TRUE, keep_shapes = TRUE) %>%
   fix_geo_problems() %>%
   group_by(category) %>%
@@ -166,5 +143,10 @@ gg_ld_ecoreg <- as(ld_ecoreg_simp, "Spatial") %>%
   gg_fortify() %>%
   write_feather("out-shiny/gg_ld_ecoreg.feather")
 
+# Copy gg objects from tmp needed for shiny app
+file.copy(from = file.path("tmp", c("gg_ld_simp.feather", "gg_bc_bound.feather")),
+          to = "out-shiny")
+
+# Copy all objects needed for shiny app to shiny app project folder
 files_list <- list.files("out-shiny", pattern = "\\.feather$|\\.rds$", full.names = TRUE)
 file.copy(from = files_list, to = "../land-designations-shinyapp/app/data", overwrite = TRUE)

@@ -13,6 +13,7 @@
 library(sf)
 library(bcmaps)
 library(dplyr)
+library(feather)
 
 source("fun.R")
 
@@ -82,3 +83,26 @@ eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
   saveRDS(eco_ld, eco_ld_rds)
   eco_ld
 })
+
+## Simplify bc boundary, fortify for ggplot and write to feather file
+bc_bound_simp_feather <- "tmp/gg_bc_bound.feather"
+bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(e) {
+  rmapshaper::ms_simplify(bc_bound_trim, keep = 0.001) %>%
+    as("Spatial") %>%
+    gg_fortify() %>%
+    write_feather(bc_bound_simp_feather)
+})
+
+## Simplify the provincial-scale categories for plotting
+ld_simp_rds <- "tmp/ld_simp.rds"
+ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
+  ld_simp <- mapshaper_apply(ld_agg_cat, "category", ms_simplify, keep = 0.01) %>%
+    fix_geo_problems()
+  saveRDS(ld_simp, ld_simp_rds)
+  ld_simp
+})
+
+## Save simplified ld object as ggplot-able feather file
+gg_ld <- as(ld_simp, "Spatial") %>%
+  gg_fortify() %>%
+  write_feather("tmp/gg_ld_simp.feather")
