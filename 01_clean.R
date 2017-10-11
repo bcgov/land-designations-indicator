@@ -14,6 +14,7 @@ library(sf)
 library(bcmaps)
 library(dplyr)
 library(feather)
+library(rmapshaper)
 
 source("fun.R")
 
@@ -93,20 +94,6 @@ bc_bound_simp <- tryCatch(read_feather(bc_bound_simp_feather), error = function(
     write_feather(bc_bound_simp_feather)
 })
 
-## Simplify the provincial-scale categories for plotting
-ld_simp_rds <- "tmp/ld_simp.rds"
-ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
-  ld_simp <- mapshaper_apply(ld_agg_cat, "category", ms_simplify, keep = 0.01) %>%
-    fix_geo_problems()
-  saveRDS(ld_simp, ld_simp_rds)
-  ld_simp
-})
-
-## Save simplified ld object as ggplot-able feather file
-gg_ld <- as(ld_simp, "Spatial") %>%
-  gg_fortify() %>%
-  write_feather("tmp/gg_ld_simp.feather")
-
 ## Aggregate the full Land Designations file
 ld_agg_rds <- "tmp/ld_agg.rds"
 ld_agg <- tryCatch(readRDS(ld_agg_rds), error = function(e) {
@@ -132,9 +119,23 @@ ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
 })
 
 # Save the aggregated land designations file as gpkg and shp
-st_write(ld_agg, "out/land_designations.gpkg")
-st_write(ld_agg, "out/land_designations.shp")
+write_sf(ld_agg, "out/land_designations.gpkg")
+write_sf(ld_agg, "out/land_designations.shp")
 files_to_zip <- list.files("out", pattern = "land_designations\\.(shp|dbf|prj|shx)$",
                            full.names = TRUE)
 zip("out/land_designations_shp.zip", files_to_zip)
 file.remove(files_to_zip)
+
+## Simplify the provincial-scale categories for plotting
+ld_simp_rds <- "tmp/ld_simp.rds"
+ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
+  ld_simp <- mapshaper_apply(ld_agg_cat, "category", ms_simplify, keep = 0.01) %>%
+    fix_geo_problems()
+  saveRDS(ld_simp, ld_simp_rds)
+  ld_simp
+})
+
+## Save simplified ld object as ggplot-able feather file
+gg_ld <- as(ld_simp, "Spatial") %>%
+  gg_fortify() %>%
+  write_feather("tmp/gg_ld_simp.feather")

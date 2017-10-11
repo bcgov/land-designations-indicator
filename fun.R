@@ -114,6 +114,7 @@ gg_ld_ecoreg <- function(ecoreg_cd, ld_df, ecoreg_df) {
 #' lapply(foo, plot)
 #' bar <- recombine_spatial_list(foo)
 mapshaper_apply <- function(x, column, fun = ms_simplify, ..., parallel = FALSE, recombine = TRUE) {
+  if (!require("rmapshaper")) stop("library 'rmapshaper' not available")
   if (parallel && !require("parallel")) stop("library 'parallel' not available")
 
   x_list <- split_on_attribute(x, column)
