@@ -71,8 +71,9 @@ The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sourc
 
 -   Run the `01_clean.R` file to prepare the data. Note that this will take a long time (several hours)
 -   Run the `02_analysis.R` file to calculate the summaries.
--   Summary csv files are copied to the `out` directory, and summary objects for use in the [land designations Shiny app](https://github.com/bcgov/land-designations-shinyapp) are copied to the `out-shiny` directory.
--   The `output.R` file will copy the files from `out-shiny` to the `../land-designations-shinyapp/app/data` folder, assuming the folder exists in same parent directory as this repository
+-   Summary csv files are copied to the `out` directory, and summary tabular objects for use in the [land designations Shiny app](https://github.com/bcgov/land-designations-shinyapp) are copied to the `out-shiny` directory.
+-   Run the `03_output_static.R` script to create outputs (png maps and graphs etc).
+-   Run the `04_output_shiny.R` scrip to generate the objects required for the shiny app. This will also copy the files from `out-shiny` to the `../land-designations-shinyapp/app/data` folder, assuming the folder exists in same parent directory as this repository
 
 Pathway to Open Source
 ----------------------

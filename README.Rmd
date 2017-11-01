@@ -79,8 +79,7 @@ The outputs from that script should be:
 Place these in the `data` folder of this repository. You will also require `BEC_BIOGEOCLIMATIC_POLY.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map) and 
 `ERC_ECOSECTIONS_SP.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia)
 
-The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sources.csv) that lists all of the source
-land designation layers used in the analysis.
+The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sources.csv) that lists all of the source land designation layers used in the analysis.
 
 ### Running the analysis
 
