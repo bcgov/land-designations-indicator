@@ -206,7 +206,7 @@ analysis. While B.C. does use aspatial land management tools, this
 indicator only reports on *legal, spatially-defined* areas that
 contribute to conservation. The analysis presents the current status of
 land designations and the intended contribution to conservation---the
-effectiveness of land designations has not been evaluated. The [*Python*](https://www.python.org/) and [*R*](http://www.r-project.org) code for repeating the analysis and data visualizations presented on this page is available on [GitHub](https://github.com/bcgov/land-designations-indicator).
+effectiveness of land designations has not been evaluated. The [**Python**](https://www.python.org/) and [**R**](http://www.r-project.org) code for repeating the analysis and data visualizations presented on this page is available on [GitHub](https://github.com/bcgov/land-designations-indicator).
 
 
 ## References and Other Useful Links
