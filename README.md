@@ -1,6 +1,6 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-<a rel="Exploration" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="Being designed and built, but in the lab. May change, disappear, or be buggy." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/exploration.svg" title="Being designed and built, but in the lab. May change, disappear, or be buggy." /></a>
+<a rel="Delivery" href="https://github.com/BCDevExchange/docs/blob/master/discussion/projectstates.md"><img alt="In production, but maybe in Alpha or Beta. Intended to persist and be supported." style="border-width:0" src="https://assets.bcdevexchange.org/images/badges/delivery.svg" title="In production, but maybe in Alpha or Beta. Intended to persist and be supported." /></a>
 
 Analysis of land designations that contribute to conservation
 =============================================================
@@ -31,7 +31,30 @@ Other than `bcmaps` and `envreportutils`, all required packages are available fr
 
 ### Data
 
-Input data is obtained by running the python script [here](https://github.com/bcgov/designatedlands) using the following commands:
+The inputs required to run this analysis can be obtained by downloading the data from the [most recent release](https://github.com/bcgov/land-designations-indicator/releases). They are:
+
+-   `designatedlands.gpkg` - the land designations layer
+-   `lands_bec.gpkg` - the land designations layer intersected with BEC (using the `overlay` command in the conservationlands tool)
+-   `lands_eco.gpkg`- the land designations layer intersected with ecosections (using the `overlay` command in the conservationlands tool)
+
+Place these in the `data` folder of this repository. You will also require `BEC_BIOGEOCLIMATIC_POLY.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map) and `ERC_ECOSECTIONS_SP.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia)
+
+The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sources.csv) that lists all of the source land designation layers used in the analysis.
+
+### Running the analysis
+
+-   Run the `01_clean.R` file to prepare the data. Note that this will take a long time (several hours)
+-   Run the `02_analysis.R` file to calculate the summaries.
+-   Summary csv files are copied to the `out` directory, and summary tabular objects for use in the [land designations Shiny app](https://github.com/bcgov/land-designations-shinyapp) are copied to the `out-shiny` directory.
+-   Run the `03_output_static.R` script to create outputs (png maps and graphs etc).
+-   Run the `04_output_shiny.R` scrip to generate the objects required for the shiny app. This will also copy the files from `out-shiny` to the `../land-designations-shinyapp/app/data` folder, assuming the folder exists in same parent directory as this repository
+
+Designated Lands Python script:
+===============================
+
+Input data was created by running the python script [here](https://github.com/bcgov/designatedlands). Please note that the code there is still being developed to make it more efficient.
+
+It was run using the following commands:
 
     ## Download the Biogeoclimatic Zone layer from here: 
     ## https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map
@@ -56,29 +79,6 @@ Input data is obtained by running the python script [here](https://github.com/bc
     python designatedlands.py dump --out_table=bec_overlay --out_file=lands_bec.gpkg --aggregate_fields="bc_boundary,designation,category,zone,subzone,variant,phase,map_label"
 
     python designatedlands.py dump --out_table=eco_overlay --out_file=lands_eco.gpkg --aggregate_fields="bc_boundary,designation,category,parent_ecoregion_code,ecosection_code,ecosection_name"
-
-The outputs from that script should be:
-
--   `designatedlands.gpkg` - the land designations layer
--   `lands_bec.gpkg` - the land designations layer intersected with BEC (using the `overlay` command in the conservationlands tool)
--   `lands_eco.gpkg`- the land designations layer intersected with ecosections (using the `overlay` command in the conservationlands tool)
-
-Place these in the `data` folder of this repository. You will also require `BEC_BIOGEOCLIMATIC_POLY.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map) and `ERC_ECOSECTIONS_SP.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia)
-
-The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sources.csv) that lists all of the source land designation layers used in the analysis.
-
-### Running the analysis
-
--   Run the `01_clean.R` file to prepare the data. Note that this will take a long time (several hours)
--   Run the `02_analysis.R` file to calculate the summaries.
--   Summary csv files are copied to the `out` directory, and summary tabular objects for use in the [land designations Shiny app](https://github.com/bcgov/land-designations-shinyapp) are copied to the `out-shiny` directory.
--   Run the `03_output_static.R` script to create outputs (png maps and graphs etc).
--   Run the `04_output_shiny.R` scrip to generate the objects required for the shiny app. This will also copy the files from `out-shiny` to the `../land-designations-shinyapp/app/data` folder, assuming the folder exists in same parent directory as this repository
-
-Pathway to Open Source
-----------------------
-
-Once the data are available, this repo will be moved to the bcgov org and developed in the open.
 
 Getting Help or Reporting an Issue
 ----------------------------------
