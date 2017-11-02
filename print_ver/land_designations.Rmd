@@ -238,7 +238,7 @@ effectiveness of land designations has not been evaluated.
 -   [Biogeoclimatic Ecosystem Classification (BEC)
     Map](https://catalogue.data.gov.bc.ca/dataset/f358a53b-ffde-4830-a325-a5a03ff672c3) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
 
-Published and Available On-Line at Environmental Reporting BC (September 2017):
+Published and Available On-Line at Environmental Reporting BC (November 2017):
 [http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html)
 
 Email correspondence to: envreportbc@gov.bc.ca
