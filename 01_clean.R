@@ -118,24 +118,6 @@ ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
   ld_agg_cat
 })
 
-## Process the file with overlapping polygons:
-ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
-  st_collection_extract(ld_overlaps, "POLYGON")
-
-ld_overlaps_clean <- ld_overlaps %>%
-  st_make_valid() %>%
-  group_by(designation, designation_name, bc_boundary) %>%
-  summarize()
-
-
-# Save the aggregated land designations file as gpkg and shp
-write_sf(ld_agg, "out/land_designations.gpkg")
-write_sf(ld_agg, "out/land_designations.shp")
-files_to_zip <- list.files("out", pattern = "land_designations\\.(shp|dbf|prj|shx)$",
-                           full.names = TRUE)
-zip("out/land_designations_shp.zip", files_to_zip)
-file.remove(files_to_zip)
-
 ## Simplify the provincial-scale categories for plotting
 ld_simp_rds <- "tmp/ld_simp.rds"
 ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
@@ -149,3 +131,24 @@ ld_simp <- tryCatch(readRDS(ld_simp_rds), error = function(e) {
 gg_ld <- as(ld_simp, "Spatial") %>%
   gg_fortify() %>%
   write_feather("tmp/gg_ld_simp.feather")
+
+## Process the file with overlapping polygons:
+ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
+  st_collection_extract(ld_overlaps, "POLYGON")
+
+ld_overlaps_clean <- ld_overlaps %>%
+  st_make_valid() %>%
+  group_by(designation, designation_name, bc_boundary) %>%
+  summarize()
+
+# Convert input gpkg to shp and use mapshaper to clean it up and aggregate it.
+# Then zip up the inputs for the release.
+if (nzchar(Sys.which("ogr2ogr")) && nzchar(Sys.which("mapshaper"))) {
+  system("ogr2ogr -f 'ESRI Shapefile' data/designatedlands.shp data/designatedlands.gpkg")
+  system("mapshaper data/designatedlands.shp -filter '\"bc_boundary_land_tiled\".indexOf(bc_bound_1) > -1' -clean -dissolve designatio copy-fields=category -o out/designatedlands.shp")
+  files_to_zip <- normalizePath(
+    c(list.files("out", pattern = "designatedlands\\.(shp|dbf|prj|shx)$", full.names = TRUE),
+      file.path("data", c("designatedlands.gpkg", "lands_bec.gpkg", "lands_eco.gpkg"))
+    ))
+  zip("out/land_designations_shp.zip", files_to_zip)
+}
