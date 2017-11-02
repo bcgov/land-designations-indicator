@@ -31,7 +31,7 @@ Other than `bcmaps` and `envreportutils`, all required packages are available fr
 
 ### Data
 
-The inputs required to run this analysis can be obtained by downloading the data from the [most recent release](https://github.com/bcgov/land-designations-indicator/releases). They are released under the [Open Government License - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61):
+The inputs required to run this analysis can be obtained by downloading the data from the [most recent release](https://github.com/bcgov/land-designations-indicator/releases). They are released under the [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61):
 
 -   `designatedlands.gpkg` - the land designations layer
 -   `lands_bec.gpkg` - the land designations layer intersected with BEC.
@@ -91,7 +91,7 @@ If you would like to contribute, please see our [CONTRIBUTING](CONTRIBUTING.md) 
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
 
-License
+Licence
 -------
 
     Copyright 2016 Province of British Columbia
