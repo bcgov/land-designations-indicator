@@ -5,7 +5,7 @@
 Analysis of land designations that contribute to conservation
 =============================================================
 
-This repository contains R code that calculates summaries of the amount of land designated in B.C. that contributes to conservation. It supports this [Environmental Reporting BC indicator]().
+This repository contains R code that calculates summaries of the amount of land designated in B.C. that contributes to conservation. It supports this [Environmental Reporting BC indicator](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html).
 
 Usage
 -----
@@ -31,11 +31,11 @@ Other than `bcmaps` and `envreportutils`, all required packages are available fr
 
 ### Data
 
-The inputs required to run this analysis can be obtained by downloading the data from the [most recent release](https://github.com/bcgov/land-designations-indicator/releases). They are:
+The inputs required to run this analysis can be obtained by downloading the data from the [most recent release](https://github.com/bcgov/land-designations-indicator/releases). They are released under the [Open Government License - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61):
 
 -   `designatedlands.gpkg` - the land designations layer
--   `lands_bec.gpkg` - the land designations layer intersected with BEC (using the `overlay` command in the conservationlands tool)
--   `lands_eco.gpkg`- the land designations layer intersected with ecosections (using the `overlay` command in the conservationlands tool)
+-   `lands_bec.gpkg` - the land designations layer intersected with BEC.
+-   `lands_eco.gpkg`- the land designations layer intersected with ecosections.
 
 Place these in the `data` folder of this repository. You will also require `BEC_BIOGEOCLIMATIC_POLY.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map) and `ERC_ECOSECTIONS_SP.gdb` from [here](https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia)
 
@@ -49,8 +49,7 @@ The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sourc
 -   Run the `03_output_static.R` script to create outputs (png maps and graphs etc).
 -   Run the `04_output_shiny.R` scrip to generate the objects required for the shiny app. This will also copy the files from `out-shiny` to the `../land-designations-shinyapp/app/data` folder, assuming the folder exists in same parent directory as this repository
 
-Designated Lands Python script:
-===============================
+### Designated Lands Python script:
 
 Input data was created by running the python script [here](https://github.com/bcgov/designatedlands). Please note that the code there is still being developed to make it more efficient.
 
