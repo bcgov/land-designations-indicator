@@ -118,6 +118,16 @@ ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
   ld_agg_cat
 })
 
+## Process the file with overlapping polygons:
+ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
+  st_collection_extract(ld_overlaps, "POLYGON")
+
+ld_overlaps_clean <- ld_overlaps %>%
+  st_make_valid() %>%
+  group_by(designation, designation_name, bc_boundary) %>%
+  summarize()
+
+
 # Save the aggregated land designations file as gpkg and shp
 write_sf(ld_agg, "out/land_designations.gpkg")
 write_sf(ld_agg, "out/land_designations.shp")
