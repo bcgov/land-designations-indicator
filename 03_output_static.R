@@ -126,7 +126,7 @@ bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
         axis.title = element_text(size = 14),
        axis.text = element_text(size = 12),
        plot.margin = unit(c(3,3,2,1), "lines"))
-plot(bcsumplot)
+ plot(bcsumplot)
 
 ## @knitr bcsummary end
 
@@ -215,8 +215,8 @@ ecofacetplot <- ggplot(eco, aes(x = ecoregion_name, y = percent_des, fill = cate
         strip.text.x = element_text(size = 13),
         axis.title = element_text(size = 14),
         axis.text = element_text(size = 9),
-        plot.margin = unit(c(2,2,1,1), "lines"))
-plot(ecofacetplot)
+        plot.margin = unit(c(2,4,1,4), "lines"))
+ plot(ecofacetplot)
 
 ## @knitr ecoreg_summary end
 
