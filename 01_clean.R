@@ -150,5 +150,5 @@ if (nzchar(Sys.which("ogr2ogr")) && nzchar(Sys.which("mapshaper"))) {
     c(list.files("out", pattern = "designatedlands\\.(shp|dbf|prj|shx)$", full.names = TRUE),
       file.path("data", c("designatedlands.gpkg", "lands_bec.gpkg", "lands_eco.gpkg"))
     ))
-  zip("out/land_designations_shp.zip", files_to_zip)
+  zip("out/land_designations.zip", files = files_to_zip, flags = "-j9X")
 }
