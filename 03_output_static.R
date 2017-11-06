@@ -30,10 +30,10 @@ library(ggthemes)
 ## @knitr pre
 
 ## colour palette
-des_cols <- c("01_PPA"                    = "#00441b",
-              "02_Protected_Other"        = "#006d2c",
-              "03_Exclude_1_2_Activities" = "#a6d96a",
-              "04_Managed"                = "#fdbf6f")
+des_cols <- c("01_PPA"                    = "#004529",
+              "02_Protected_Other"        = "#006837",
+              "03_Exclude_1_2_Activities" = "#41ab5d",
+              "04_Managed"                = "#d9f0a3")
 
 ## category labels for legend
 cat_labels_full <- c("01_PPA" = "Parks & Protected Areas",
