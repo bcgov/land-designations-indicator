@@ -13,8 +13,8 @@
 
 source("01_clean.R")
 source("02_analysis.R")
-source("03_output_shiny.R")
-source("04_output_static.R")
+source("03_output_static.R")
+source("04_output_shiny.R")
 
 mon_year <- format(Sys.Date(), "%B%Y")
 outfile <- paste0("envreportbc_land_designations_", mon_year, ".pdf")
