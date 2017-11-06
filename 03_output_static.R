@@ -131,8 +131,7 @@ bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
 ## @knitr bcsummary end
 
 ## print BC Summary plot to PNG at retina quality
-png_retina(filename = "out/bc_sum_plot.png",
-    width = 500, height = 500, units = "px")
+svg_px("./out/bc_sum_plot.svg", width = 500, height = 500)
 bcsumplot
 dev.off()
 
