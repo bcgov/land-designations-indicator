@@ -124,8 +124,9 @@ ld_map + theme(legend.position = c(0,0))
 
 # Ecoregions and Land Designations that Contribute to Conservation in B.C.
 
-```{r ecoreg_summary, fig.height=9, fig.width=8}
+```{r ecoreg_summary, fig.height=8, fig.width=8}
 ```
+
 
 \newpage
 
