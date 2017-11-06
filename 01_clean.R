@@ -134,7 +134,7 @@ gg_ld <- as(ld_simp, "Spatial") %>%
 
 ## Process the file with overlapping polygons:
 ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
-  st_collection_extract(ld_overlaps, "POLYGON")
+  st_collection_extract("POLYGON")
 
 ld_overlaps_clean <- ld_overlaps %>%
   st_make_valid() %>%
