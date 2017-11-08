@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 library(sf)
+library(readr)
 library(bcmaps)
 library(dplyr)
 library(feather)
@@ -133,13 +134,15 @@ gg_ld <- as(ld_simp, "Spatial") %>%
   write_feather("tmp/gg_ld_simp.feather")
 
 ## Process the file with overlapping polygons:
-ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
-  st_collection_extract("POLYGON")
-
-ld_overlaps_clean <- ld_overlaps %>%
-  st_make_valid() %>%
-  group_by(designation, designation_name, bc_boundary) %>%
-  summarize()
+ld_overlaps_rds <- "tmp/ld_overlaps.rds"
+ld_overlaps <- tryCatch(readRDS(ld_overlaps_rds), error = function(e) {
+  ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
+    st_collection_extract("POLYGON") %>%
+    st_make_valid() %>%
+    mutate(area = st_area(.))
+  saveRDS(ld_overlaps, ld_overlaps_rds)
+  ld_overlaps
+})
 
 # Convert input gpkg to shp and use mapshaper to clean it up and aggregate it.
 # Then zip up the inputs for the release.

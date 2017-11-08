@@ -225,3 +225,22 @@ png_retina(filename = "out/ecoregion_facet_plot.png",
 ecofacetplot
 dev.off()
 
+## Summarize overlaps file to get terrestrial areas of the different designations falling under
+## categories 1 and 2:
+ld_overlaps_summary <- ld_overlaps %>%
+  st_set_geometry(NULL) %>%
+  group_by(designation, designation_name, bc_boundary) %>%
+  summarize(area = sum(area))
+
+ld_overlaps_summary_protected <- ld_overlaps_summary %>%
+  filter(bc_boundary == "bc_boundary_land_tiled") %>%
+  group_by(designation) %>%
+  summarize(area = sum(area)) %>%
+  mutate(percent_bc = 100 * (area / sum(st_area(bc_bound_trim))),
+         des_number = gsub("^c(\\d\\d).+", "\\1", designation),
+         designation = gsub("^c\\d\\d_ol_", "", designation),
+         area_ha = units::set_units(area, ha)) %>%
+  filter(des_number < 16) %>%
+  select(designation, area_ha, percent_bc)
+write_csv(ld_overlaps_summary_protected, "out/land_designations_ppa_summary_2017-11-07.csv")
+
