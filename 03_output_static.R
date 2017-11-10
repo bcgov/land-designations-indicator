@@ -230,8 +230,8 @@ dev.off()
 ld_overlaps_summary <- ld_overlaps %>%
   st_set_geometry(NULL) %>%
   mutate(des_number = gsub("^c(\\d\\d).+", "\\1", designation),
-         designation = gsub("^c\\d\\d_ol_", "", designation)) %>%
-  group_by(des_number, designation, bc_boundary) %>%
+         designation = gsub("^c\\d\\d_", "", designation)) %>%
+  group_by(category, des_number, designation, bc_boundary) %>%
   summarize(area = sum(area)) %>%
   mutate(percent_terr_bc = 100 * (area / sum(st_area(bc_bound_trim))),
          area_ha = units::set_units(area, ha)) %>%
@@ -239,7 +239,14 @@ ld_overlaps_summary <- ld_overlaps %>%
 
 ld_overlaps_summary_protected <- ld_overlaps_summary %>%
   ungroup() %>%
-  filter(des_number < 16 & bc_boundary == "bc_boundary_land_tiled") %>%
-  select(designation, area_ha, percent_terr_bc)
+  filter(category %in% c("01_PPA", "02_Protected_Other") &
+           bc_boundary == "bc_boundary_land_tiled") %>%
+  select(caegory, designation, area_ha, percent_terr_bc)
 write_csv(ld_overlaps_summary_protected, "out/land_designations_ppa_summary_2017-11-07.csv")
+
+ld_overlaps_summary_all_terr <- ld_overlaps_summary %>%
+  ungroup() %>%
+  filter(bc_boundary == "bc_boundary_land_tiled" & !is.na(designation)) %>%
+  select(category, designation, area_ha, percent_terr_bc)
+write_csv(ld_overlaps_summary_all_terr, "out/land_designations_terrestrial_summary_2017-11-10.csv")
 
