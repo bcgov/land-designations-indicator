@@ -53,8 +53,8 @@ rollup_category <- function(category) {
 ## Static BC Summary map
 
 ## read in datafiles
-ld_df <- read_feather("out-shiny/gg_ld_ecoreg.feather")
-bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
+ld_df <- read_feather("tmp/gg_ld_simp.feather")
+bc_map <-  read_feather("tmp/gg_bc_bound.feather")
 
 ## @knitr map
 
@@ -244,9 +244,13 @@ ld_overlaps_summary_protected <- ld_overlaps_summary %>%
   select(caegory, designation, area_ha, percent_terr_bc)
 write_csv(ld_overlaps_summary_protected, "out/land_designations_ppa_summary_2017-11-07.csv")
 
+sources <- read_csv("https://raw.githubusercontent.com/bcgov/designatedlands/v010/sources.csv")
+
 ld_overlaps_summary_all_terr <- ld_overlaps_summary %>%
   ungroup() %>%
   filter(bc_boundary == "bc_boundary_land_tiled" & !is.na(designation)) %>%
-  select(category, designation, area_ha, percent_terr_bc)
+  left_join(sources, by = c("designation" = "alias")) %>%
+  select(category = category.y, name, area_ha, percent_terr_bc, url, metadata_url, info_url) %>%
+  arrange(category, desc(area_ha))
 write_csv(ld_overlaps_summary_all_terr, "out/land_designations_terrestrial_summary_2017-11-10.csv")
 
