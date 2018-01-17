@@ -79,8 +79,13 @@ png_retina(filename = "out/bc_ld_map.png",
 ld_map
 dev.off()
 
+library(magick)
+ldmap <- image_read("out/bc_ld_map.png")
+ldmapsmall <- image_resize(ldmap, "1000x1000")
 
-
+image_write(ldmapsmall,
+            path = "out/bc_ld_map_small.png",
+            format = "jpg")
 
 ## Static bar chart for provincial summary by category
 ## read in datafile
