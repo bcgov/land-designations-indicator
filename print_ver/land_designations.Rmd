@@ -1,7 +1,7 @@
 ---
 topic: "land"
 title: "Land Designations that Contribute to Conservation in B.C."
-output: envreportbc::print_ver
+output: envreportutils.internal::print_ver
 ---
 
 
@@ -227,11 +227,13 @@ effectiveness of land designations has not been evaluated. The [**Python**](http
 
 \*By accessing these datasets, you agree to the licence associated with each file, as indicated in parentheses below.
 
--   [Indicator data: Spatial and Tabular Summaries of Land Designations
-    that Contribute to Conservation in
-    B.C.](https://catalogue.data.gov.bc.ca/dataset/3eedf0da-0c1d-4917-aff5-1eb8f59736bc) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
+-   [Indicator Data: Summary of Land Designations that Contribute to Conservation in B.C.](https://catalogue.data.gov.bc.ca/dataset/2ad14e62-e0b1-4989-9333-6082177f61e8) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
+
+-   [Land Designations that Contribute to Conservation in B.C. - Spatial Data](https://catalogue.data.gov.bc.ca/dataset/e0b30537-5498-437b-b668-9fafe44bf903) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
+
 -   [Ecoregions - Ecoregion Ecosystem Classification of British
     Columbia](https://catalogue.data.gov.bc.ca/dataset/d00389e0-66da-4895-bd56-39a0dd64aa78) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
+    
 -   [Biogeoclimatic Ecosystem Classification (BEC)
     Map](https://catalogue.data.gov.bc.ca/dataset/f358a53b-ffde-4830-a325-a5a03ff672c3) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
 
