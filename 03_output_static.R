@@ -53,7 +53,7 @@ rollup_category <- function(category) {
 ## Static BC Summary map
 
 ## read in datafiles
-ld_df <- read_feather("out-shiny/gg_ld_ecoreg.feather")
+ld_df <- read_feather("out-shiny/gg_ld_simp.feather")
 bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
 
 ## @knitr map
@@ -234,18 +234,28 @@ dev.off()
 ## categories 1 and 2:
 ld_overlaps_summary <- ld_overlaps %>%
   st_set_geometry(NULL) %>%
-  group_by(designation, designation_name, bc_boundary) %>%
-  summarize(area = sum(area))
+  mutate(des_number = gsub("^c(\\d\\d).+", "\\1", designation),
+         designation = gsub("^c\\d\\d_", "", designation)) %>%
+  group_by(category, des_number, designation, bc_boundary) %>%
+  summarize(area = sum(area)) %>%
+  mutate(percent_terr_bc = 100 * (area / sum(st_area(bc_bound_trim))),
+         area_ha = units::set_units(area, ha)) %>%
+  select(-area)
 
 ld_overlaps_summary_protected <- ld_overlaps_summary %>%
-  filter(bc_boundary == "bc_boundary_land_tiled") %>%
-  group_by(designation) %>%
-  summarize(area = sum(area)) %>%
-  mutate(percent_bc = 100 * (area / sum(st_area(bc_bound_trim))),
-         des_number = gsub("^c(\\d\\d).+", "\\1", designation),
-         designation = gsub("^c\\d\\d_ol_", "", designation),
-         area_ha = units::set_units(area, ha)) %>%
-  filter(des_number < 16) %>%
-  select(designation, area_ha, percent_bc)
+  ungroup() %>%
+  filter(category %in% c("01_PPA", "02_Protected_Other") &
+           bc_boundary == "bc_boundary_land_tiled") %>%
+  select(caegory, designation, area_ha, percent_terr_bc)
 write_csv(ld_overlaps_summary_protected, "out/land_designations_ppa_summary_2017-11-07.csv")
+
+sources <- read_csv("https://raw.githubusercontent.com/bcgov/designatedlands/v010/sources.csv")
+
+ld_overlaps_summary_all_terr <- ld_overlaps_summary %>%
+  ungroup() %>%
+  filter(bc_boundary == "bc_boundary_land_tiled" & !is.na(designation)) %>%
+  left_join(sources, by = c("designation" = "alias")) %>%
+  select(category = category.y, name, area_ha, percent_terr_bc, url, metadata_url, info_url) %>%
+  arrange(category, desc(area_ha))
+write_csv(ld_overlaps_summary_all_terr, "out/land_designations_terrestrial_summary_2017-11-10.csv")
 

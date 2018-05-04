@@ -136,10 +136,20 @@ gg_ld <- as(ld_simp, "Spatial") %>%
 ## Process the file with overlapping polygons:
 ld_overlaps_rds <- "tmp/ld_overlaps.rds"
 ld_overlaps <- tryCatch(readRDS(ld_overlaps_rds), error = function(e) {
+
+  ## Read file with overlaps and designation attributes retained.
+  ## category is empty, so populate with lookup table created from
+  ## ld_t
   ld_overlaps <- read_sf("data/designatedlands_overlaps.gpkg") %>%
     st_collection_extract("POLYGON") %>%
     st_make_valid() %>%
-    mutate(area = st_area(.))
+    select(-category) %>%
+    mutate(area = st_area(.),
+           designation = gsub("ol_", "", designation),
+           designation = gsub("(c01_park_national).+", "\\1", designation)) %>%
+    left_join(st_set_geometry(ld_t, NULL) %>%
+                distinct(designation, category), by = "designation")
+
   saveRDS(ld_overlaps, ld_overlaps_rds)
   ld_overlaps
 })
