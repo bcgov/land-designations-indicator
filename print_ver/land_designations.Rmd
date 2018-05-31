@@ -210,7 +210,7 @@ ld_map + theme(legend.position = c(0,0))
 
 The complete list of included land designations, category information,
 data sources, and data licence details is [available in CSV
-format](https://github.com/bcgov/land-designations-indicator/blob/cleanup-release/data-raw/sources.csv). Some designations were
+format](https://github.com/bcgov/land-designations-indicator/blob/master/data-raw/sources_Nov2017.csv). Some designations were
 not included at this time due to a lack of a public, authoritative data
 source. These will be added to the analysis as they become available.
 
