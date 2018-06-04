@@ -79,3 +79,39 @@ GROUP BY
 LIFE_CYCLE_STATUS_CODE
 ```
 
+```{sql connection=con}
+SELECT 
+ designation,
+ substring(designation from 2) as des
+FROM designatedlands_overlaps
+LIMIT 500
+```
+
+```{r warning=FALSE}
+dbSendQuery(con, "DROP TABLE IF EXISTS test")
+dbWriteTable(con, "test", 
+             data.frame(name = c("a1_foo", "b25_foo", "c9foo", "d5_bar", "1a"), 
+                        id = 1:5))
+```
+
+
+```{sql connection=con}
+SELECT * 
+FROM test
+```
+
+```{sql connection=con}
+UPDATE test
+SET name = substring(name from 2)
+WHERE name ~ '^[a-c][0-9]';
+
+UPDATE test
+SET name = '1_foobar'
+WHERE name LIKE '%1_foo%';
+```
+
+```{sql connection=con}
+SELECT * 
+FROM test
+ORDER BY id
+```
