@@ -1,4 +1,4 @@
-# Copyright 2016 Province of British Columbia
+# Copyright 2020 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -10,16 +10,98 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
+
+# load data required for indicator
+
+
+
 library(sf)
 library(readr)
-library(bcmaps)
-library(dplyr)
-library(feather)
-library(rmapshaper)
+library(raster)
+library(tidyverse)
+#library(bcmaps)
+#library(dplyr)
+#library(feather)
+#library(rmapshaper)
 
-source("fun.R")
 
-dir.create("tmp", showWarnings = FALSE)
+if(!dir.exists("tmp")) dir.create("tmp", showWarnings = FALSE)
+
+
+# download data files
+
+data.dir = file.path("data/outputs/outputs")
+# temporary data source
+
+list.files(data.dir)
+
+tif <- list.files(data.dir, pattern = ".tif")
+
+# read in raster
+
+tifs <- lapply(tif, function(t){
+  raster(file.path(data.dir, t))
+})
+
+names(tifs) <- tif
+
+
+
+# set key for restriction level
+
+rest_key <- tribble(
+  ~ value, ~ rlevel,
+  0 , "None",
+  1 , "Low",
+  2 , "Medium",
+  3 , "High",
+  4 , "Full"
+)
+
+
+
+# temp raster
+#forest <- raster(file.path(data.dir, "forest_restriction.tif"))
+#og <- raster(file.path(data.dir, "og_restriction.tif"))
+#mine <- raster(file.path(data.dir, "mine_restriction.tif"))
+
+
+
+
+
+library(ggplot2)
+library(gridExtra)
+
+pf <- plot(forest)
+po <- plot(og)
+pm <- plot(mine)
+
+
+grid.arrange(pf, po), nrow = 1)
+
+
+grid.arrange(p1, p2, nrow = 1)
+
+
+
+
+# set key for restriction level
+
+rest_key <- tribble(
+  ~ value, ~ rlevel,
+  0 , "None",
+  1 , "Low",
+  2 , "Medium",
+  3 , "High",
+  4 , "Full"
+)
+
+
+
+
+
+
+# read in base data
 
 bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
 bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
@@ -29,29 +111,6 @@ bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
   bc_bound_trim
 })
 
-## Clip Ecoregions to BC Boundary
-ecoreg_t_rds <- "tmp/ecoreg_t.rds"
-ecoregions_t <- tryCatch(readRDS(ecoreg_t_rds), error = function(e) {
-  m_ecoregions <- c("HCS", "IPS", "OPS", "SBC", "TPC")
-  eco_t <- st_intersection(st_as_sf(ecoregions[!ecoregions$CRGNCD %in% m_ecoregions,]),
-                     bc_bound_trim)
-  eco_t <- fix_geo_problems(eco_t)
-  eco_t$ecoreg_area <- st_area(eco_t)
-  saveRDS(eco_t, file = ecoreg_t_rds)
-  eco_t
-})
-
-## Clip bgc to BC boundary
-bec_t_rds <- "tmp/bec_t.rds"
-bec_t <- tryCatch(readRDS(bec_t_rds), error = function(e) {
-  bec <- read_sf("data/BEC_BIOGEOCLIMATIC_POLY.gdb")
-  bec <- transform_bc_albers(bec)
-  bec_t <- clip_only(bec, bc_bound_trim)
-  bec_t <- fix_geo_problems(bec_t)
-  bec_t$bec_area <- st_area(bec_t)
-  saveRDS(bec_t, file = bec_t_rds)
-  bec_t
-})
 
 ## Get full land designations file
 ld_t_rds <- "tmp/ld_t.rds"
@@ -64,16 +123,7 @@ ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
   ld_t
 })
 
-## Load BEC x land designations
-bec_ld_rds <- "tmp/bec_ld_t.rds"
-bec_ld <- tryCatch(readRDS(bec_ld_rds), error = function(e) {
-  bec_ld <- read_sf("data/lands_bec.gpkg") %>%
-    filter(bc_boundary == "bc_boundary_land_tiled") %>%
-    select(-bc_boundary) %>%
-    mutate(calc_area = st_area(.))
-  saveRDS(bec_ld, bec_ld_rds)
-  bec_ld
-})
+
 
 ## Load Ecosections x land designations
 eco_ld_rds <- "tmp/eco_ld_t.rds"
