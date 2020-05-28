@@ -14,7 +14,6 @@
 # load data required for indicator
 
 
-
 library(sf)
 library(readr)
 library(raster)
@@ -30,21 +29,32 @@ if(!dir.exists("tmp")) dir.create("tmp", showWarnings = FALSE)
 
 # download data files
 
-data.dir = file.path("data/outputs/outputs")
+
+# use drake to pull data set ? test this set up and save to data folder
+
 # temporary data source
+data.dir = file.path("data/outputs/outputs")
 
-list.files(data.dir)
 
-tif <- list.files(data.dir, pattern = ".tif")
 
-# read in raster
 
+
+#list.files(data.dir)
+
+tif <- list.files(data.dir, pattern = ".tif", full.names = TRUE)
+
+# read in rasters and name
+
+# option 1: stack
+tif.stack <- stack(tif)
+
+
+# option 2: list ?
 tifs <- lapply(tif, function(t){
   raster(file.path(data.dir, t))
 })
 
 names(tifs) <- tif
-
 
 
 # set key for restriction level
@@ -67,40 +77,6 @@ rest_key <- tribble(
 
 
 
-
-
-library(ggplot2)
-library(gridExtra)
-
-pf <- plot(forest)
-po <- plot(og)
-pm <- plot(mine)
-
-
-grid.arrange(pf, po), nrow = 1)
-
-
-grid.arrange(p1, p2, nrow = 1)
-
-
-
-
-# set key for restriction level
-
-rest_key <- tribble(
-  ~ value, ~ rlevel,
-  0 , "None",
-  1 , "Low",
-  2 , "Medium",
-  3 , "High",
-  4 , "Full"
-)
-
-
-
-
-
-
 # read in base data
 
 bc_bound_trim_rds <- "tmp/bc_bound_trim.rds"
@@ -115,26 +91,30 @@ bc_bound_trim <- tryCatch(readRDS(bc_bound_trim_rds), error = function(e) {
 ## Get full land designations file
 ld_t_rds <- "tmp/ld_t.rds"
 ld_t <- tryCatch(readRDS(ld_t_rds), error = function(e) {
-  ld_t <- read_sf("data/designatedlands.gpkg") %>%
-    filter(bc_boundary == "bc_boundary_land_tiled") %>%
-    select(-bc_boundary) %>%
-    mutate(calc_area = st_area(.))
-  saveRDS(ld_t, ld_t_rds)
-  ld_t
+  ld_t <- st_read(file.path(data.dir, "designatedlands.gpkg", layer = "designatedlands" ))# %>%
+  #ld_t <- read_sf("data/designatedlands.gpkg") %>%
+    #filter(bc_boundary == "bc_boundary_land_tiled") %>%
+    #select(-bc_boundary) %>%
+    #mutate(calc_area = st_area(.))
+  #saveRDS(ld_t, ld_t_rds)
+  #ld_t
 })
 
 
 
-## Load Ecosections x land designations
-eco_ld_rds <- "tmp/eco_ld_t.rds"
-eco_ld <- tryCatch(readRDS(eco_ld_rds), error = function(e) {
-  eco_ld <- read_sf("data/lands_eco.gpkg") %>%
-    filter(bc_boundary == "bc_boundary_land_tiled") %>%
-    select(-bc_boundary) %>%
-    mutate(calc_area = st_area(.))
-  saveRDS(eco_ld, eco_ld_rds)
-  eco_ld
-})
+st_layers(file.path(data.dir, "designatedlands.gpkg"))
+
+
+f_r <- d
+
+Driver: GPKG
+Available layers:
+  layer_name geometry_type features fields
+1    designatedlands                 332369      9
+2 forest_restriction                 391156      3
+3     og_restriction                 343951      3
+4   mine_restriction                  58035      3
+
 
 ## Simplify bc boundary, fortify for ggplot and write to feather file
 bc_bound_simp_feather <- "tmp/gg_bc_bound.feather"
@@ -168,6 +148,7 @@ ld_agg_cat <- tryCatch(readRDS(ld_agg_cat_rds), error = function(e) {
   saveRDS(ld_agg_cat, ld_agg_cat_rds)
   ld_agg_cat
 })
+
 
 ## Simplify the provincial-scale categories for plotting
 ld_simp_rds <- "tmp/ld_simp.rds"
