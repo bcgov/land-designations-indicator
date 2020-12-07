@@ -64,7 +64,6 @@ docker run -d \
  --name=dlpg \
  crunchydata/crunchy-postgres-appdev
  
-python designatedlands.py download
 python designatedlands.py download config_2020-10-08.cfg
 python designatedlands.py preprocess config_2020-10-08.cfg
 python designatedlands.py process-vector config_2020-10-08.cfg
