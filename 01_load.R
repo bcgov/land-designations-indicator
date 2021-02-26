@@ -48,7 +48,8 @@ bc_nr_dist <- nr_districts(class="sf", ask= FALSE, force=FALSE)
 if (!exists("tmp")) dir.create("tmp", showWarnings = FALSE)
 
 #save vector objs
-save(bc_boundary, bc_size_km, bc_size_ha, bc_cities, ld_f, ld_o, ld_m, file = "tmp/raw_data_vect.RData")
+save(bc_boundary, bc_size_km, bc_size_ha, bc_cities, bc_nr_dist,
+     ld_f, ld_o, ld_m, file = "tmp/raw_data_vect.RData")
 
 #save(forest, mine, og, file = "tmp/raw_data_ras.RData")
 
