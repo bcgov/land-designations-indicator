@@ -15,6 +15,7 @@
 library(dplyr)
 library(tidyverse)
 library(sf)
+library(RStoolbox)
 
 
 if (!exists("ld_m")) load("tmp/raw_data_vect.RData")
@@ -61,7 +62,7 @@ ld_o_sum <- ld_o %>%
 
 
 rest_key <- tribble(
-  ~ restriction, ~ r_level, ~ Category,
+  ~ restriction, ~ r_level, ~ category,
   NA , "None", "None",
   1 , "Full", "Parks & Protected Areas",
   2 , "High", "Other Protected Lands",
@@ -72,19 +73,17 @@ rest_key <- tribble(
 cons_area_all <- rbind(ld_f_sum, ld_m_sum, ld_o_sum) %>%
   left_join(rest_key)
 
-#add nat res district to spatial data for plotting
+# select subset of cities for plotting - choose largest city in each natural resource district
 
 message("Add nr districts regions")
-ld_m_nr <- st_intersection(ld_m, bc_nr_dist)
-# write_rds(pa_eco, "data/CPCAD_Dec2020_BC_clean_no_ovlps_ecoregions.rds")
+ld_cities <- st_intersection(bc_nr_dist, bc_cities) %>%
+  group_by(DISTRICT_NAME) %>%
+  slice_max(POP_2000, n=1) %>%
+  dplyr::select(DISTRICT_NAME, NAME, POP_2000, geometry)
 
 
 
 
-
-
-
-
-save(ld_f_sum, ld_m_sum, ld_o_sum, cons_area_all, file = "tmp/clean.RData")
+save(ld_f_sum, ld_m_sum, ld_o_sum, ld_cities, cons_area_all, file = "tmp/clean.RData")
 
 

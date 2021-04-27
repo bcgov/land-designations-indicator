@@ -13,61 +13,77 @@
 library(tidyverse)
 library(sf)
 library(raster)
+library(rgdal)
+library(rasterVis)
 library(RColorBrewer)
 library(envreportutils)
 
-if (!exists("cons_area_all")) load("tmp/clean.RData")
-if (!exists("ld_m")) load("tmp/raw_data_vect.RData")
-
+if (!exists("cons_area_all")) load("tmp/clean.RData") #tidy data
+if (!exists("ld_m")) load("tmp/raw_data_vect.RData") #load vector data
+if (!exists("forest")) load("tmp/raw_data_ras.RData") #load raster data
 
 #stacked plot forestry
 
-cons_area_all$plot_cat <-factor(cons_area_all$Category, c("None", "Managed Areas",
+cons_area_all$category <-factor(cons_area_all$category, c("None", "Managed Areas",
                                                           "Resource Exclusion Areas",
                                                           "Other Protected Lands",
                                                           "Parks & Protected Areas"))
 
-cons.order <- unique(cons_area_all$plot_cat)
-cons.cols<-5
-cons.pal <- rev(brewer.pal(cons.cols, "Purples"))
-names(cons.pal) <- cons.order
 
-prop_des<- ggplot(cons_area_all, aes(fill=plot_cat, x=perc_bc_ha, y=restriction_type,
-                                     order=plot_cat)) +
-  geom_bar(position="fill", stat="identity") +
-  scale_fill_manual(values = cons.pal) +
-  guides(fill = guide_legend(reverse = TRUE))+
-  xlab("Proportion of Land Designations by Industry in B.C.") + ylab(NULL) +
+cat.color <- c("Forestry" = "darkgreen",
+               "Oil & Gas" = "darkorange3",
+               "Mining" = "deeppink4")
+
+
+prop_des<- ggplot(cons_area_all, aes(x=perc_bc_ha, y=restriction_type, fill=restriction_type,
+                                     alpha=category)) +
+  geom_bar(width = 0.9, stat="identity") +
+  scale_fill_manual(values = cat.color, guide=FALSE) +
+  scale_alpha_manual(values = c(
+    "None"=0.1,
+    "Parks & Protected Areas"=1,
+    "Other Protected Lands"=0.8,
+    "Resource Exclusion Areas"=0.6,
+    "Managed Areas"=0.4)) +
+  #scale_x_continuous(expand = c(0,0)) +
+  guides(alpha = guide_legend(reverse = TRUE))+
+  xlab("Proportion of Land Designations by Industry in B.C.(%)") + ylab(NULL) +
   theme_soe() +
   theme(legend.position="bottom",
         legend.title=element_blank())
 
 plot(prop_des)
 
-#interactive map
-gg_map <- ggplot() +
-    geom_polygon_interactive(data = data,
-                             aes(x = long,
-                                 y = lat,
-                                 group = group,
-                                 tooltip = Label,
-                                 data_id = Regional_District,
-                                 fill = Disposal_Rate_kg),
-                             size = 0.3, color = "black") +
-    # coord_sf(crs = 3005) +
-    theme_void() +
-    scale_fill_gradientn(colours = tints, na.value = hex_na,
-                         name = paste(yr, "Disposal\n(kg / person)"),
-                         breaks = seq(300, 900, by = 150),
-                         limits = c(300, 900)) +
-    theme(axis.text = element_blank(),
-          legend.position = c(0.2, 0.16),
-          legend.title = element_text(size = txt_size),
-          legend.text = element_text(size = txt_size - 1))
+#map outputs
 
+for_theme<- rasterTheme(region=brewer.pal(5, "Greens"))
+for_ras<-levelplot(forest$forest_restriction, par.settings = for_theme)
 
+mine_theme<- rasterTheme(region=brewer.pal(5, "Purples"))
+mine_ras<-levelplot(mine$mine_restriction, par.settings = mine_theme)
+
+og_theme<- rasterTheme(region=brewer.pal(5, "Oranges"))
+og_ras<-levelplot(og$og_restriction, par.settings = og_theme)
+
+forest.sp <- rasterToPolygons(forest)
+
+for_ras_gg <- ggplot()+
+  geom_raster(data=forest, aes(fill=attributes))+
+  scale_fill_manual(values=for_theme) +
+  theme(axis.title=element_blank())+
+  coord_quickmap()
+
+for_df <- as.data.frame(forest, xy=TRUE)
+
+for_plot <- ggplot()+
+  geom_raster(data=forest, aes(x=x, y=y, fill=attributes))
 
 #save outputs
+
+if (!exists("tmp")) dir.create("tmp", showWarnings = FALSE)
+save(prop_des, mine_ras, og_ras, for_ras, for_ras_gg,
+     file = "tmp/plots.RData")
+
 
 if (!exists("out")) dir.create("out", showWarnings = FALSE)
 
@@ -82,6 +98,30 @@ plot(prop_des)
 dev.off()
 
 
+svg_px("./out/for_ras.svg", width = 700, height = 900)
+plot(for_ras)
+dev.off()
 
+png_retina(filename = "./out/for_ras.png", width = 700, height = 400,
+           units = "px", type = "cairo-png", antialias = "default")
+plot(for_ras)
+dev.off()
 
+svg_px("./out/mine_ras.svg", width = 700, height = 900)
+plot(mine_ras)
+dev.off()
+
+png_retina(filename = "./out/mine_ras.png", width = 700, height = 400,
+           units = "px", type = "cairo-png", antialias = "default")
+plot(mine_ras)
+dev.off()
+
+svg_px("./out/og_ras.svg", width = 700, height = 900)
+plot(og_ras)
+dev.off()
+
+png_retina(filename = "./out/og_ras.png", width = 700, height = 400,
+           units = "px", type = "cairo-png", antialias = "default")
+plot(og_ras)
+dev.off()
 

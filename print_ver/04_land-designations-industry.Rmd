@@ -1,0 +1,91 @@
+---
+topic: "Lands & Forests"
+title: "Designated Conservation Lands by Industry"
+output: 
+  html_document:
+    self_contained: false
+  pdf_document: envreportutils.internal::print_ver
+---
+<!--
+Copyright 2021 Province of British Columbia
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
+-->
+
+```{r setup, echo=FALSE, cache=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(sf)
+library(raster)
+library(rgdal)
+library(rasterVis)
+library(RColorBrewer)
+library(envreportutils)
+
+## Read in plotting objects from 03_output.R if not already in environment
+if (!exists("cons_area_all")) load("tmp/clean.RData") #tidy data
+if (!exists("ld_m")) load("tmp/raw_data_vect.RData") #load vector data
+if (!exists("forest")) load("tmp/raw_data_ras.RData")
+if (!exists("prop_des")) load("tmp/plots.RData")
+
+opts_chunk$set(echo=FALSE, cache=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.height=3.5, fig.width=8)
+
+
+theme_print <-   theme(axis.text.y = element_text(size = 8),
+                       axis.text.x = element_text(size = 8),
+                       axis.title.y = element_text(size = 10,
+                                                   margin = margin(t = 0, r = 10,
+                                                                   b = 0, l = 0,
+                                                                   unit = "pt")),
+                       plot.title = element_text(size = 10, hjust = 0.5),
+                       plot.margin = unit(c(6,6,6,2),"mm"))
+
+#theme for plots with integrated labels
+theme_summary <- theme(axis.text.y = element_text(size = 8),
+                       axis.text.x = element_text(size = 8),
+                       axis.title.y = element_text(size = 10,
+                                                   margin = margin(t = 0, r = 10,
+                                                                   b = 0, l = 0,
+                                                                   unit = "pt")),
+                       plot.title = element_text(size = 10, hjust = 0.5),
+                       plot.margin = unit(c(0.5,3.5,0.5,0.5), "cm"))
+
+is_html <- knitr::is_html_output()
+is_pdf <- knitr::is_latex_output()
+
+if (is_html) opts_chunk$set(fig.align = 'center')
+```
+
+* Areas of B.C. are designated for conservation and have different types of restrictions on industrial activities. The primary purpose of these lands is to conserve important fish and wildlife habitat, protect biological diversity and cultural values, and manage natural resources. 
+
+* Industrial activities, such as forestry, mining and oil & gas extraction, may be limited in these designated lands. The restrictions on each industry depend on the type of designation and the region. 
+
+* The type of protected area and the associated level of restriction is sorted into 4 categories. Individual designated areas may have different restriction levels on different industries.  
+  1. Full Restriction - Parks & Protected Areas
+  2. High Restriction - Other Protected Areas
+  3. Medium Restriction - Resource Exclusion Areas
+  4. Low Restriction - Managed Area
+
+*Information about each type of designation
+* Placeholder for summary stats here. 
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

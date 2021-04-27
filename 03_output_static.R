@@ -1,4 +1,4 @@
-# Copyright 2016 Province of British Columbia
+# Copyright 2021 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -10,252 +10,59 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
-library(ggplot2)
-library(ggpolypath)
-library(envreportutils) #theme_soe_facet & png_retina
-library(magrittr) # %>%
-library(feather) #read in feather file
-library(ggthemes)
+library(tidyverse)
+library(sf)
+library(raster)
+library(RColorBrewer)
+library(envreportutils)
 
-# ggplot(gg_ld_bec, aes(x = long, y = lat, group = group)) +
-#   geom_polypath(aes(fill = category)) +
-#   coord_fixed()
-#
-# ggplot(gg_ld_ecoreg, aes(x = long, y = lat, group = group)) +
-#   geom_polypath(aes(fill = category)) +
-#   coord_fixed()
-
-## Static Outputs
-
-## @knitr pre
-
-## colour palette
-des_cols <- c("01_PPA"                    = "#004529",
-              "02_Protected_Other"        = "#006837",
-              "03_Exclude_1_2_Activities" = "#41ab5d",
-              "04_Managed"                = "#d9f0a3")
-
-## category labels for legend
-cat_labels_full <- c("01_PPA" = "Parks & Protected Areas",
-                "02_Protected_Other" = "Other Protected Lands",
-                "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
-                "04_Managed" = "Spatially Managed Areas")
-
-## function to roll-up the two protected (sub)categories
-rollup_category <- function(category) {
-  factor(ifelse(category %in% c("01_PPA", "02_Protected_Other"),
-                "Prot", category),
-         levels = c("04_Managed", "03_Exclude_1_2_Activities", "Prot"), ordered = TRUE)
-}
-
-## @knitr pre end
-
-## Static BC Summary map
-
-## read in datafiles
-ld_df <- read_feather("out-shiny/gg_ld_simp.feather")
-bc_map <-  read_feather("out-shiny/gg_bc_bound.feather")
-
-## @knitr map
-
-## plot BC map with 3 categories
-ld_map <- ggplot(ld_df, aes(x = long, y = lat, group = group)) +
-  geom_polypath(data = bc_map, fill = "grey80", colour = "gray80") +
-  geom_polypath(aes(fill = category)) +
-  scale_fill_manual(values = des_cols, labels = cat_labels_full, name = NULL) +
-  coord_fixed(expand = FALSE) +
-  theme_map() +
-  theme(legend.position="none",
-        legend.text = element_text(size = 12))
-#  guides(guide = "none")
-
-## @knitr map end
-
-plot(ld_map)
-
-## print BC Summary map to PNG at retina quality
-png_retina(filename = "out/bc_ld_map.png",
-    width = 500, height = 500, units = "px")
-ld_map
-dev.off()
-
-library(magick)
-ldmap <- image_read("out/bc_ld_map.png")
-ldmapsmall <- image_resize(ldmap, "1000x1000")
-
-image_write(ldmapsmall,
-            path = "out/bc_ld_map_small.png",
-            format = "jpg")
-
-## Static bar chart for provincial summary by category
-## read in datafile
-bcsum <- read.csv("out/bc_land_designations_summary.csv", stringsAsFactors = FALSE)
+if (!exists("cons_area_all")) load("tmp/clean.RData")
+if (!exists("ld_m")) load("tmp/raw_data_vect.RData")
 
 
-## @knitr bcsummary
+#stacked plot forestry
 
-## roll-up two protected categories
-bcsum$rollup <- rollup_category(bcsum$category)
+cons_area_all$plot_cat <-factor(cons_area_all$Category, c("None", "Managed Areas",
+                                                          "Resource Exclusion Areas",
+                                                          "Other Protected Lands",
+                                                          "Parks & Protected Areas"))
 
-## category labels for legend
-cat_labels <- c("01_PPA" = "Parks & Protected Areas",
-                "02_Protected_Other" = "Other Protected Lands")
-                # "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
-                # "04_Managed" = "Managed Areas")
+cons.order <- unique(cons_area_all$plot_cat)
+cons.cols<-5
+cons.pal <- rev(brewer.pal(cons.cols, "Purples"))
+names(cons.pal) <- cons.order
 
-## setting factors for ordering bars
-bcsum$category <- factor(bcsum$category, levels = c("04_Managed",
-                                                    "03_Exclude_1_2_Activities",
-                                                    "02_Protected_Other",
-                                                    "01_PPA"))
-## bc summary bar plot
-bcsumplot <- ggplot(bcsum, aes(x = rollup, y = percent_des, fill = category)) +
-  geom_col(width = .6) +
-  scale_fill_manual(breaks = c("01_PPA","02_Protected_Other"), values = des_cols, labels = cat_labels) +
-  scale_x_discrete(labels = c("04_Managed" = "Spatially\nManaged\nAreas",
-                              "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
-                              "Prot" = "Protected\nLands")) +
-  guides(fill = guide_legend(title = NULL)) +
-  coord_flip() +
-  labs(x = "", y = "Percent of British Columbia Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 25, 5), limits = c(0, 25)) +
+prop_des<- ggplot(cons_area_all, aes(fill=plot_cat, x=perc_bc_ha, y=restriction_type,
+                                     order=plot_cat)) +
+  geom_bar(position="fill", stat="identity") +
+  scale_fill_manual(values = cons.pal) +
+  guides(fill = guide_legend(reverse = TRUE))+
+  xlab("Proportion of Land Designations by Industry in B.C.") + ylab(NULL) +
   theme_soe() +
-  theme(panel.grid.major.x = element_line(colour = "grey90"),
-        panel.grid.minor.x = element_line(colour = "grey90"),
-        panel.grid.major.y = element_blank(),
-       legend.position = "top",
-    #    legend.direction = "vertical",
-  #     legend.position = c(.85, .72),
-        legend.background = element_blank(),
-        legend.text = element_text(size = 12),
-        axis.title = element_text(size = 14),
-       axis.text = element_text(size = 12),
-       plot.margin = unit(c(3,3,2,1), "lines"))
- plot(bcsumplot)
+  theme(legend.position="bottom",
+        legend.title=element_blank())
 
-## @knitr bcsummary end
+plot(prop_des)
 
-## print BC Summary plot to PNG at retina quality
-svg_px("./out/bc_sum_plot.svg", width = 500, height = 500)
-bcsumplot
+
+plot(ld_m)
+ld_f_map <- ggplot(ld_m, (aes(group=mine_restriction)))
+plot(ld_f_map)
+#save outputs
+
+if (!exists("out")) dir.create("out", showWarnings = FALSE)
+
+
+svg_px("./out/prop_des.svg", width = 700, height = 400)
+plot(prop_des)
+dev.off()
+
+png_retina(filename = "./out/prop_des.png", width = 700, height = 400,
+           units = "px", type = "cairo-png", antialias = "default")
+plot(prop_des)
 dev.off()
 
 
-## Static facet bar chart for summary by bgc and category
-##read in datafile
-bgc <- read.csv("out/bc_bgc_zone_land_designations_summary.csv", stringsAsFactors = FALSE)
 
-## @knitr bgc_summary
 
-##roll-up two protected categories
-bgc$rollup <- rollup_category(bgc$category)
-
-#facet labels
-lab <- c("04_Managed" = "Spatially Managed Areas",
-         "03_Exclude_1_2_Activities" = "Resource Exclusion Areas",
-         "Prot" = "Protected Lands")
-
-## order bars within facets
-bgc <- bgc  %>%
-    order_df("ZONE_NAME", "percent_designated", fun = max)
-
-## bgc facet plot
-bgcfacetplot <- ggplot(bgc, aes(x = ZONE_NAME, y = percent_designated, fill = category)) +
-  geom_col() +
-  facet_wrap(~rollup, nrow=3, labeller = labeller(rollup = lab)) +
-  scale_fill_manual(values = des_cols, guide =FALSE) +
-   coord_flip() +
-  labs(x = "Biogeoclimatic Zone\n", y = "Percent Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 65, 5), limits = c(0, 65)) +
-  theme_soe_facet() +
-  theme(panel.grid.major.x = element_line(colour = "grey90"),
-        panel.grid.minor.x = element_line(colour = "grey90"),
-        panel.grid.major.y = element_blank(),
-        strip.placement = "top",
-        strip.text.x = element_text(size = 13),
-        axis.title = element_text(size = 14),
-        axis.text = element_text(size = 10),
-        plot.margin = unit(c(2,2,1,1), "lines"))
-plot(bgcfacetplot)
-
-## @knitr bgc_summary end
-
-## print BGC facet plot to PNG at retina quality
-png_retina(filename = "out/bgc_facet_plot.png",
-    width = 900, height = 700, units = "px")
-bgcfacetplot
-dev.off()
-
-## Static facet bar chart for summary by ecoregion and category
-##read in datafile
-eco <- read.csv("out/bc_ecoregions_land_designations_summary.csv", stringsAsFactors = FALSE)
-
-## @knitr ecoreg_summary
-
-##roll-up two protected categories
-eco$rollup <- rollup_category(eco$category)
-
-#facet labels
-lab <- c("04_Managed" = "Spatially\nManaged\nAreas",
-         "03_Exclude_1_2_Activities" = "Resource\nExclusion\nAreas",
-         "Prot" = "Protected\nLands")
-
-eco <- eco  %>%
-  order_df("ecoregion_name", "percent_des", fun = max)
-
-##ecoregion facet plot
-ecofacetplot <- ggplot(eco, aes(x = ecoregion_name, y = percent_des, fill = category)) +
-  geom_col() +
-  facet_wrap(~rollup, nrow=1, labeller = labeller(rollup = lab)) +
-  scale_fill_manual(values = des_cols, guide =FALSE) +
-  coord_flip() +
-  labs(x = "Ecoregion\n", y = "Percent Designated") +
-  scale_y_continuous(expand = c(0, 0), breaks = seq(20, 100, 20), limits = c(0, 100)) +
-  theme_soe_facet() +
-  theme(panel.grid.major.x = element_line(colour = "grey90"),
-        panel.grid.minor.x = element_line(colour = "grey90"),
-        panel.grid.major.y = element_blank(),
-        strip.placement = "top",
-        strip.text.x = element_text(size = 13),
-        axis.title = element_text(size = 14),
-        axis.text = element_text(size = 9),
-        plot.margin = unit(c(2,4,1,4), "lines"))
- plot(ecofacetplot)
-
-## @knitr ecoreg_summary end
-
-## print facet plot to PNG at retina quality
-png_retina(filename = "out/ecoregion_facet_plot.png",
-    width = 900, height = 700, units = "px")
-ecofacetplot
-dev.off()
-
-## Summarize overlaps file to get terrestrial areas of the different designations falling under
-## categories 1 and 2:
-ld_overlaps_summary <- ld_overlaps %>%
-  st_set_geometry(NULL) %>%
-  mutate(des_number = gsub("^c(\\d\\d).+", "\\1", designation),
-         designation = gsub("^c\\d\\d_", "", designation)) %>%
-  group_by(category, des_number, designation, bc_boundary) %>%
-  summarize(area = sum(area)) %>%
-  mutate(percent_terr_bc = 100 * (area / sum(st_area(bc_bound_trim))),
-         area_ha = units::set_units(area, ha)) %>%
-  select(-area)
-
-ld_overlaps_summary_protected <- ld_overlaps_summary %>%
-  ungroup() %>%
-  filter(category %in% c("01_PPA", "02_Protected_Other") &
-           bc_boundary == "bc_boundary_land_tiled") %>%
-  select(caegory, designation, area_ha, percent_terr_bc)
-write_csv(ld_overlaps_summary_protected, "out/land_designations_ppa_summary_2017-11-07.csv")
-
-sources <- read_csv("https://raw.githubusercontent.com/bcgov/designatedlands/v010/sources.csv")
-
-ld_overlaps_summary_all_terr <- ld_overlaps_summary %>%
-  ungroup() %>%
-  filter(bc_boundary == "bc_boundary_land_tiled" & !is.na(designation)) %>%
-  left_join(sources, by = c("designation" = "alias")) %>%
-  select(category = category.y, name, area_ha, percent_terr_bc, url, metadata_url, info_url) %>%
-  arrange(category, desc(area_ha))
-write_csv(ld_overlaps_summary_all_terr, "out/land_designations_terrestrial_summary_2017-11-10.csv")
 
