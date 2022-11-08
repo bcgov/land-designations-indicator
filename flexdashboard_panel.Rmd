@@ -1,0 +1,557 @@
+---
+title: "Themed dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      bg: "#CADFE8"
+      fg: "#FDF7F7" 
+      primary: "#66ABCA"
+      base_font:
+        google: Prompt
+      code_font:
+        google: JetBrains Mono
+    orientation: columns
+    vertical_layout: fill
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(sf)
+library(crosstalk)
+library(leaflet)
+# library(leaflet.extras)
+library(plotly)
+library(envreportutils)
+library(ggpubr)
+library(magick)
+library(jpeg)
+rm(list = ls())
+```
+
+```{r}
+#Load data
+
+bc_regs_each_r_level = read_sf('tmp/bc_regdists.gpkg') 
+
+# ld_with_reg = load('tmp/ld_with_reg.RData')
+choro_data = read.csv('tmp/ld_choro.csv')
+
+bc_regs = bc_regs_each_r_level %>% 
+  group_by(industry_name, ADMIN_AREA_NAME) %>% 
+  slice_head(n = 1)
+
+bc_regs = bc_regs %>% 
+  left_join(choro_data) %>% 
+  dplyr::select(names(choro_data))
+
+bc_regs = bc_regs %>% 
+  mutate(image_path = paste0('tmp/regdist_figs/',industry_name,"_",ADMIN_AREA_NAME,".jpeg"))
+
+bc_regs = bc_regs %>% mutate(my_key = paste0(industry_name,ADMIN_AREA_NAME,max_restriction_value))
+
+
+
+### Read in the images from path using {magick}'s 'image_read' function.
+# ---------------------------------------------------------------------------------
+# bc_regs$image_col = NA
+
+# for(i in 1:nrow(bc_regs)){
+#   add_me = list(image_read(paste0('tmp/regdist_figs/',bc_regs[i,]$industry_name,"_",bc_regs[i,]$ADMIN_AREA_NAME,".jpeg")))
+#   
+#   bc_regs$image_col[i] = add_me
+# }
+#----------------------------------------------------------------------------------
+
+# SharedData$new(multi_jpeg)
+
+# forest_image = readJPEG('out/forest_restriction_plot.jpeg')
+# mine_image = readJPEG('out/mine_restriction_plot.jpeg')
+# og_image = readJPEG('out/og_restriction_plot.jpeg')
+```
+
+```{r}
+shared_dat_f = crosstalk::SharedData$new(bc_regs %>% st_transform(crs = 3005) %>% filter(industry_name == "forest_restriction_max"), key = ~my_key, group = 'all')
+
+shared_dat_m = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "mine_restriction_max"), key = ~my_key)
+
+shared_dat_og = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "og_restriction_max"), key = ~my_key)
+
+shared_images_f = crosstalk::SharedData$new(bc_regs %>%
+                                              dplyr::select(my_key,image_path) %>%
+                                              st_drop_geometry(),
+                                            group = 'all')
+```
+
+```{r image_tests}
+
+# ### Reading in a single image, using {magick} package.
+# single_jpeg = image_read('tmp/regdist_figs/forest_restriction_max_Columbia-Shuswap Regional District.jpeg')
+# 
+# single_jpeg
+# 
+# ### Reading in multiple images and storing them in a dataframe, then acessing with row indexing.
+# multi_jpeg = data.frame(image_path = list.files(path = 'tmp/regdist_figs/',
+#                                                 pattern = '.jpeg',
+#            full.names = T)[c(1,2)]) %>%
+#   as_tibble()
+# 
+# multi_jpeg$image_col = NA
+# 
+# for(i in 1:nrow(multi_jpeg)){
+#   add_me = list(image_read(multi_jpeg[i,]$image_path))
+#   multi_jpeg[i,]$image_col = add_me
+# }
+# 
+# multi_jpeg$image_col[1]
+# multi_jpeg$image_col[2]
+# 
+# ### Here is how to render a plot with ggplot and a JPEG or PNG image from disk. You only need the file path, you do not need to have read the image into the environment.
+# library(ggimage)
+# ggplot(bc_regs[1,]) + geom_image(aes(x = 1, y = 1, image = 'tmp/regdist_figs/forest_restriction_max_Capital Regional District.jpeg'), size = 1) + ggthemes::theme_map()
+# 
+# ### And here's how to make a plotly figure using an image from disk.
+# bc_regs[1,] %>% 
+#   st_drop_geometry() %>% 
+#   plot_ly() %>%
+#   layout(
+#     images = list(
+#       list(
+#         # source = raster2uri(as.raster(test_image)),
+#         source = ~raster2uri(as.raster(readJPEG(image_path))),
+#         x = 0, 
+#         y = 0,
+#         xref = "x",
+#         yref = "y",
+#         x = 1,
+#         y = 3,
+#         sizex = 5,
+#         sizey = 3,
+#         xanchor = 'left',
+#         yanchor = 'bottom'
+#         # sizing = "stretch"
+#       )
+#     ),
+#     margin = list(t = 10)
+#   ) %>% 
+#   layout(plot_bgcolor='#e5ecf6',
+#          xaxis = list(
+#            zerolinecolor = '#ffff',
+#            zerolinewidth = 2,
+#            gridcolor = 'ffff'),
+#          yaxis = list(
+#            zerolinecolor = '#ffff',
+#            zerolinewidth = 2,
+#            gridcolor = 'ffff'))
+# 
+# bscols(
+#   list(
+#   filter_select(
+#     id = 'region_select',
+#     label = "Select Regional District",
+#     shared_dat_f,
+#     group = ~ADMIN_AREA_NAME,
+#     # selectize = F,
+#     multiple = F
+#   ),
+#   p
+#   )
+# )
+```
+
+```{r}
+data(txhousing, package = "ggplot2")
+
+# declare `city` as the SQL 'query by' column
+tx <- highlight_key(txhousing, ~city)
+
+# initiate a plotly object
+his_base <- plot_ly(tx, color = I("black")) %>% 
+  group_by(city)
+
+time_series = his_base %>%
+  group_by(city) %>%
+  add_lines(x = ~date, y = ~median)
+
+dot_plot <- his_base %>%
+  summarise(miss = sum(is.na(median))) %>%
+  filter(miss > 0) %>%
+  add_markers(
+    x = ~miss, 
+    y = ~forcats::fct_reorder(city, miss), 
+    hoverinfo = "x+y"
+  ) %>%
+  layout(
+    xaxis = list(title = "Number of months missing"),
+    yaxis = list(title = "")
+  ) 
+
+hist <- add_histogram(
+  his_base,
+  x = ~median, 
+  histnorm = "probability density"
+)
+
+# subplot(time_series, hist, nrows = 1) %>%
+#   layout(barmode = "overlay", showlegend = FALSE) %>%
+#   highlight(
+#     dynamic = TRUE, 
+#     selectize = TRUE, 
+#     selected = attrs_selected(opacity = 0.3)
+#   )
+```
+
+```{r my_version}
+#Make key highlight dataset, plotly style.
+#sd_f = highlight_key(bc_regs, ~my_key)
+
+# # initiate a plotly object
+# base <- plot_ly(shared_dat_f, color = I("black")) %>% 
+#   #add_trace() %>% 
+#   group_by(ADMIN_AREA_NAME)
+
+# left_plot = base %>% 
+#   group_by(ADMIN_AREA_NAME) %>% 
+#   add_scattergeo() %>% 
+#   highlight(persistent = F, color = 'red', opacityDim = 1) %>% 
+#   layout(title = "Click on Regional District to Select", showlegend = FALSE) %>% 
+#   config(displayModeBar = F)
+
+### Right Plot where image is a trace added on top.
+# right_plot = shared_dat_f %>%
+#   # plotly_empty() %>%
+#   plot_ly() %>% 
+#   add_image(source = ~raster2uri(as.raster(readJPEG(image_path)))) %>%
+#   layout(margin=list(l=10, r=10, b=0, t=0),
+#          xaxis=list(showticklabels=FALSE, ticks=""),
+#          yaxis=list(showticklabels=FALSE, ticks=""))
+
+# Could try...
+# style(p, ..., trace = something)
+# layout(p, ...)
+# plotly_empty()
+
+
+### Right Plot where image is background image established in layout.
+# right_plot = base %>% #shared_dat_f %>%
+#   #plot_ly() %>%
+#   add_trace() %>%
+#   layout(
+#     images = list(
+#        list(
+#         source = ~raster2uri(as.raster(readJPEG(image_path))),
+#         layer = 'above',
+#         x = -0.8,
+#         y = 0.05,
+#         xref = "x",
+#         yref = "y",
+#         sizex = 5,
+#         sizey = 3,
+#         xanchor = 'left',
+#         yanchor = 'bottom',
+#         sizing = "stretch",
+#         opacity = 1
+#         # visible = F
+#       )
+#     )
+#   ) %>%
+#   layout(
+#     xaxis = list(title = "",showgrid=FALSE,
+#                  zeroline=FALSE,
+#                  showticklabels=FALSE,
+#                  showticks=FALSE,
+#                  showzero=FALSE),
+#     yaxis = list(title = "",
+#                  showgrid=FALSE,
+#                  zeroline=FALSE,
+#                  showticklabels=FALSE,
+#                  showticks=FALSE)
+#   )
+
+# right_plot = plotly::plotly_empty()
+# right_plot
+
+
+#slickR.
+
+#library(slickR)
+# right_plot = slickR(base %>% plotly::plotly_data() %>% pull(image_path))
+# right_plot = base %>% plotly::plotly_data()
+# subplot(map_ggplot, right_plot, nrows = 1) %>%
+#   layout(barmode = "overlay", showlegend = FALSE) %>%
+#   highlight(
+#     dynamic = TRUE, 
+#     selectize = TRUE
+#     # selected = attrs_selected(opacity = 0.0)
+#   )
+
+```
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Forestry
+
+```{r}
+# map_ggplot = ggplot() + geom_sf(data = shared_dat_f)
+# map_ggplot = ggplotly(map_ggplot)
+
+### Using shared_dat_f ###
+# map_ggplot = shared_dat_f %>% 
+#   # group_by(ADMIN_AREA_NAME) %>% 
+#   plot_ly(split = ~ADMIN_AREA_NAME,
+#           color = I("gray"),
+#           hoveron = 'fills') %>% 
+#   group_by(ADMIN_AREA_NAME) %>% 
+#   add_scattergeo() %>% 
+#   highlight(persistent = F, color = 'red', opacityDim = 1) %>% 
+#   layout(title = "Click on Regional District to Select", showlegend = FALSE) %>%
+#   config(displayModeBar = F)
+base = bc_regs %>% 
+  highlight_key(~my_key) %>% 
+  plot_ly(color = I("black"))
+
+# map_ggplot
+
+base_mapplot = base %>% 
+  group_by(ADMIN_AREA_NAME) %>% 
+  add_scattergeo()
+  
+right_plot = base %>% #shared_dat_f %>%
+  #plot_ly() %>%
+  add_trace() %>%
+  layout(
+    images = list(
+       list(
+        source = ~raster2uri(as.raster(readJPEG(image_path))),
+        layer = 'above',
+        x = -0.8,
+        y = 0.05,
+        xref = "x",
+        yref = "y",
+        sizex = 5,
+        sizey = 3,
+        xanchor = 'left',
+        yanchor = 'bottom',
+        sizing = "stretch",
+        opacity = 1
+        # visible = F
+      )
+    )
+  ) %>%
+  layout(
+    xaxis = list(title = "",showgrid=FALSE,
+                 zeroline=FALSE,
+                 showticklabels=FALSE,
+                 showticks=FALSE,
+                 showzero=FALSE),
+    yaxis = list(title = "",
+                 showgrid=FALSE,
+                 zeroline=FALSE,
+                 showticklabels=FALSE,
+                 showticks=FALSE)
+  )
+
+highlight(
+  subplot(
+  base_mapplot,
+  right_plot),
+          on = 'plotly_selected',
+          off = 'plotly_doubleclick',
+          dynamic = T, selectize = T,
+          persistent = F, color = 'red', 
+          multiple = F,
+          opacityDim = 0.5) %>% 
+  layout(title = "Click on Regional District to Select", showlegend = FALSE) %>% 
+  config(displayModeBar = F)
+
+map_ggplot
+# subplot(map_ggplot, right_plot, nrows = 2) %>% 
+#   layout(barmode = "overlay", showlegend = T) %>%
+#   highlight(
+#     dynamic = TRUE,
+#     selectize = TRUE,
+#     opacityDim = 0.5,
+#     selected = attrs_selected(opacity = 0.5)
+#   )
+
+library(jpeg)
+library(magick)
+
+# main_plot = image_scale(image_read('out/forest_restriction_plot.jpeg'), "x1200")
+# main_barplot = image_scale(image_read('out/forestry_barplot.png'), "x600")
+# image_for_mosaic = c(main_plot,main_barplot)
+# image_append(image_for_mosaic,stack=T)
+
+# g = shiny::plotOutput({
+#   p = shared_dat_f %>% 
+#     ggplot() + 
+#     geom_image(aes(x = 1, y = 1, image = image_path), size = 1) + ggthemes::theme_map()
+#   # ggplotly(p)
+#   p
+# })
+
+# library(png)
+# test_image = png('tmp/regdist_figs/forest_restriction_max_Capital Regional District.png')
+# test_image = readJPEG('tmp/regdist_figs/forest_restriction_max_North Coast Regional District.jpeg')
+# test_image = magick::image_read('tmp/regdist_figs/forest_restriction_max_Capital Regional District.jpeg')
+
+# library(bslib)
+# card(
+#     card_header("Test"),
+#     card_body(map_ggplot)
+#   )
+
+# bscols(
+#   list(
+#     # filter_slider(
+#     #   id = 'rlevel_slider',
+#     #   label = "Restriction Level",
+#     #   sharedData = shared_dat_f,
+#     #   column = ~max_restriction_value,
+#     #   step = 1,
+#     # ),
+#     # filter_select(
+#     #   id = 'rlevel_selector',
+#     #   label = 'Restriction Level',
+#     #   sharedData = shared_dat_f,
+#     #   group = ~max_restriction_value,
+#     #   multiple = F,
+#     #   allLevels = F
+#     # ),
+#     highlight(
+#       map_ggplot
+#       # on = 'plotly_hover',
+#       on = 'plotly_click',
+#       off = 'plotly_doubleclick'
+#     )
+#   )
+# )
+
+
+# my_pal = leaflet::colorBin(palette = "Reds",
+#                            domain = c(0,100),
+#                            bins = 4,
+#                            na.color = '#C5C5C5')
+# 
+# leaflet(shared_dat) %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>%
+#   add_bc_home_button() %>%
+#   set_bc_view() %>%
+#   addLegend(pal = my_pal, values = seq(0,100,20),
+#             title = "Proportion with Restriction") %>%
+#   addPolygons(color = 'grey',
+#               weight = 2,
+#               fill = T,
+#               fillColor = ~my_pal(prop_regdist_area*100),
+#               # fillOpacity = 1,
+#               label = ~paste0(ADMIN_AREA_NAME, ": ", round(prop_regdist_area*100,2),"%"))
+```
+
+### Mining
+
+```{r}
+
+```
+
+### Oil and Gas
+
+```{r}
+
+```
+
+Column {.tabset}
+-------------------------------------------------------------------------
+
+### Regional District
+```{r}
+
+### Working, but needing some love, plotly image viewer.
+# p = plot_ly(shared_dat_f,
+#             x = 5/2, y = 1,
+#             type ='scatter'
+#             ) %>% 
+#   layout(
+#     images = list(
+#       list(
+#         # source = raster2uri(as.raster(test_image)),
+#         source = ~raster2uri(as.raster(readJPEG(image_path))),
+#         x = -0.8, 
+#         y = 0.05,
+#         xref = "x",
+#         yref = "y",
+#         sizex = 5,
+#         sizey = 3,
+#         xanchor = 'left',
+#         yanchor = 'bottom',
+#         sizing = "stretch"
+#       )
+#     ),
+#     margin = list(t = 10)
+#   ) %>% 
+#   layout(plot_bgcolor='#e5ecf6',
+#          xaxis = list(
+#            zerolinecolor = '#ffff',
+#            zerolinewidth = 2,
+#            gridcolor = 'ffff'),
+#          yaxis = list(
+#            zerolinecolor = '#ffff',
+#            zerolinewidth = 2,
+#            gridcolor = 'ffff'),
+#          showlegend = FALSE)
+
+# highlight(p, 
+#           on = 'plotly_selected',
+#           dynamic = T,
+#           selectize = T)
+# p
+
+# bscols(
+#   list(
+#   filter_select(
+#     id = 'region_select',
+#     label = "Select Regional District",
+#     shared_dat_f,
+#     group = ~ADMIN_AREA_NAME,
+#     # selectize = F,
+#     multiple = F
+#   ),
+#   p
+#   )
+# )
+# bscols(
+#   map_ggplot, right_plot,
+#   DT::datatable(shared_dat_f)
+# )
+
+subplot(map_ggplot, right_plot, nrows = 2) %>% 
+  highlight(
+    selected = attrs_selected(
+      image = list(
+        list(
+          source = ~raster2uri(as.raster(readJPEG(image_path))),
+          x = -0.8,
+          y = 0.05,
+          xref = "x",
+          yref = "y",
+          sizex = 5,
+          sizey = 3,
+          xanchor = 'left',
+          yanchor = 'bottom',
+          sizing = "stretch",
+          opacity = 0.5,
+          layer = 'above'
+          # visible = F
+        )))
+  )
+```
+
+### Datatable
+```{r}
+DT::datatable(shared_dat_f)
+```
+
+
+
