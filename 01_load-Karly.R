@@ -23,10 +23,11 @@ library(rmapshaper)
 # Bring in land designations layer (.gpkg)
 data.ld = file.path("data/designatedlands.gpkg")
 data.dir = file.path("data")
+ld = read_sf('data/designatedlands.gpkg')
 
-ld_m <- st_read(dsn = data.ld, layer="mine_restriction")
-ld_f <- st_read(dsn = data.ld, layer="forest_restriction")
-ld_o <- st_read(dsn = data.ld, layer="og_restriction")
+# ld_m <- st_read(dsn = data.ld, layer="mine_restriction")
+# ld_f <- st_read(dsn = data.ld, layer="forest_restriction")
+# ld_o <- st_read(dsn = data.ld, layer="og_restriction")
 
 # # Bring in industry rasters - mining, forestry, o&g
 # forest <- raster(file.path(data.dir, "forest_restriction.tif"))
@@ -48,22 +49,15 @@ bc_nr_dist <- nr_districts(class="sf", ask= FALSE, force=FALSE)
 if (!exists("tmp")) dir.create("tmp", showWarnings = FALSE)
 
 #save vector objs
-save(bc_boundary, bc_size_km, bc_size_ha, bc_cities, ld_f, ld_o, ld_m, file = "tmp/raw_data_vect.RData")
+# save(bc_boundary, bc_size_km, bc_size_ha, bc_cities, ld_f, ld_o, ld_m, file = "tmp/raw_data_vect.RData")
+save(bc_boundary, bc_nr_dist, bc_size_km, bc_size_ha, bc_cities, ld, file = "tmp/raw_data_vect.RData")
 
 #save(forest, mine, og, file = "tmp/raw_data_ras.RData")
 
-
-
-
-
-
 #example map :)
 ggplot()+
-   #geom_sf(data=bc_bound())+
-   geom_sf(data=bc_nr_dist, mapping=aes(color="DISTRICT_NAME"))+
-   geom_sf(data=bc_cities)+
-   geom_sf(data=bc_bound())
-
-# ggplot()+
-#   geom_sf(data=ld_f, mapping=aes(fill=forest_restriction))
+  geom_sf(data=bc_nr_dist, aes(fill=DISTRICT_NAME))+
+  geom_sf(data=bc_cities, size = 2, shape = 21)+
+  geom_sf(data=bc_boundary,fill='transparent') +
+  theme(legend.position = 'none')
 
