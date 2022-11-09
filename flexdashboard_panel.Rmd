@@ -3,8 +3,8 @@ title: "Themed dashboard"
 output: 
   flexdashboard::flex_dashboard:
     theme:
-      bg: "#CADFE8"
-      fg: "#FDF7F7" 
+      bg: "white"
+      fg: "black" 
       primary: "#66ABCA"
       base_font:
         google: Prompt
@@ -32,157 +32,69 @@ library(bslib)
 rm(list = ls())
 ```
 
-```{r}
-#Load data
+```{r load_data}
+bc_regs_each_r_level = read_sf('tmp/bc_regdists.gpkg') %>% 
+  st_transform(crs = 3005) %>% 
+  mutate(key = paste(industry_name, ADMIN_AREA_NAME, max_restriction_value, sep = '_'))
 
-bc_regs_each_r_level = read_sf('tmp/bc_regdists.gpkg') 
+bc_regs_wide = bc_regs_each_r_level %>% 
+  dplyr::select(industry_name, ADMIN_AREA_NAME, max_restriction_value, prop_regdist_area) %>% 
+  mutate(max_restriction_value = paste0('max_restriction_',max_restriction_value)) %>% 
+  spread(key = max_restriction_value, value = prop_regdist_area)
 
-# ld_with_reg = load('tmp/ld_with_reg.RData')
-choro_data = read.csv('tmp/ld_choro.csv')
+bc_regs_just_geometries = bc_regs_each_r_level %>% 
+  dplyr::select(industry_name, ADMIN_AREA_NAME, max_restriction_value, key) %>% 
+  distinct()
 
-bc_regs = bc_regs_each_r_level %>% 
-  group_by(industry_name, ADMIN_AREA_NAME) %>% 
-  slice_head(n = 1)
+bc_regs_just_values = bc_regs_each_r_level %>% 
+  st_drop_geometry()
 
-bc_regs = bc_regs %>% 
-  left_join(choro_data) %>% 
-  dplyr::select(names(choro_data))
-
-bc_regs = bc_regs %>% 
-  mutate(image_path = paste0('tmp/regdist_figs/',industry_name,"_",ADMIN_AREA_NAME,".jpeg"))
-
-bc_regs = bc_regs %>% mutate(my_key = paste0(industry_name,ADMIN_AREA_NAME,max_restriction_value))
-
-
-
-### Read in the images from path using {magick}'s 'image_read' function.
-# ---------------------------------------------------------------------------------
-# bc_regs$image_col = NA
-
-# for(i in 1:nrow(bc_regs)){
-#   add_me = list(image_read(paste0('tmp/regdist_figs/',bc_regs[i,]$industry_name,"_",bc_regs[i,]$ADMIN_AREA_NAME,".jpeg")))
+# bc_regs_each_r_level %>% 
+#   group_by(industry_name, ADMIN_AREA_NAME) %>% 
 #   
-#   bc_regs$image_col[i] = add_me
-# }
-#----------------------------------------------------------------------------------
-
-# SharedData$new(multi_jpeg)
-
-# forest_image = readJPEG('out/forest_restriction_plot.jpeg')
-# mine_image = readJPEG('out/mine_restriction_plot.jpeg')
-# og_image = readJPEG('out/og_restriction_plot.jpeg')
+#   slice_head(n = 1)
+# 
+# bc_regs = bc_regs %>% mutate(my_key = paste0(industry_name,ADMIN_AREA_NAME,max_restriction_value))
 ```
 
-```{r}
-shared_dat_f = crosstalk::SharedData$new(bc_regs %>% st_transform(crs = 3005) %>% filter(industry_name == "forest_restriction_max"), key = ~my_key, group = 'all')
-
-shared_dat_m = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "mine_restriction_max"), key = ~my_key)
-
-shared_dat_og = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "og_restriction_max"), key = ~my_key)
-
-shared_images_f = crosstalk::SharedData$new(bc_regs %>%
-                                              dplyr::select(my_key,image_path) %>%
-                                              st_drop_geometry(),
-                                            key = ~my_key)
-```
-
-```{r image_tests}
-
-# ### Reading in a single image, using {magick} package.
-# single_jpeg = image_read('tmp/regdist_figs/forest_restriction_max_Columbia-Shuswap Regional District.jpeg')
-# 
-# single_jpeg
-# 
-# ### Reading in multiple images and storing them in a dataframe, then acessing with row indexing.
-# multi_jpeg = data.frame(image_path = list.files(path = 'tmp/regdist_figs/',
-#                                                 pattern = '.jpeg',
-#            full.names = T)[c(1,2)]) %>%
-#   as_tibble()
-# 
-# multi_jpeg$image_col = NA
-# 
-# for(i in 1:nrow(multi_jpeg)){
-#   add_me = list(image_read(multi_jpeg[i,]$image_path))
-#   multi_jpeg[i,]$image_col = add_me
-# }
-# 
-# multi_jpeg$image_col[1]
-# multi_jpeg$image_col[2]
-# 
-# ### Here is how to render a plot with ggplot and a JPEG or PNG image from disk. You only need the file path, you do not need to have read the image into the environment.
-# library(ggimage)
-# ggplot(bc_regs[1,]) + geom_image(aes(x = 1, y = 1, image = 'tmp/regdist_figs/forest_restriction_max_Capital Regional District.jpeg'), size = 1) + ggthemes::theme_map()
-# 
-# ### And here's how to make a plotly figure using an image from disk.
-# bc_regs[1,] %>% 
-#   st_drop_geometry() %>% 
-#   plot_ly() %>%
-#   layout(
-#     images = list(
-#       list(
-#         # source = raster2uri(as.raster(test_image)),
-#         source = ~raster2uri(as.raster(readJPEG(image_path))),
-#         x = 0, 
-#         y = 0,
-#         xref = "x",
-#         yref = "y",
-#         x = 1,
-#         y = 3,
-#         sizex = 5,
-#         sizey = 3,
-#         xanchor = 'left',
-#         yanchor = 'bottom'
-#         # sizing = "stretch"
-#       )
-#     ),
-#     margin = list(t = 10)
-#   ) %>% 
-#   layout(plot_bgcolor='#e5ecf6',
-#          xaxis = list(
-#            zerolinecolor = '#ffff',
-#            zerolinewidth = 2,
-#            gridcolor = 'ffff'),
-#          yaxis = list(
-#            zerolinecolor = '#ffff',
-#            zerolinewidth = 2,
-#            gridcolor = 'ffff'))
-# 
-# bscols(
-#   list(
-#   filter_select(
-#     id = 'region_select',
-#     label = "Select Regional District",
-#     shared_dat_f,
-#     group = ~ADMIN_AREA_NAME,
-#     # selectize = F,
-#     multiple = F
-#   ),
-#   p
-#   )
-# )
-
+```{r load_in_provincial_summary_jpegs}
 main_plot_f = image_read('out/forest_restriction_plot.jpeg') %>% 
-  image_scale("x1200") %>% 
-  image_crop('900x700+0+250')
+  image_scale("x800") 
+  # image_crop('900x700+0+250')
 
 main_plot_m = image_read('out/mine_restriction_plot.jpeg') %>% 
-  image_scale("x1200") %>% 
-  image_crop('900x700+0+250')
+  image_scale("x800")
+  # image_crop('900x700+0+250')
 
 main_plot_og = image_read('out/og_restriction_plot.jpeg') %>% 
-  image_scale("x1200") %>% 
-  image_crop('900x700+0+250')
+  image_scale("x800")
+  # image_crop('900x700+0+250')
 
 # main_barplot_f = image_read('out/forestry_barplot.png') %>% 
-  # image_convert(format = 'jpeg') %>% 
-  # image_scale("x600")
+# image_convert(format = 'jpeg') %>% 
+# image_scale("x600")
 
 # image_for_mosaic_f = c(main_plot_f,main_barplot_f)
 # image_append(image_for_mosaic_f,stack=T)
 ```
 
+```{r establish_crosstalk_shared_data_environments}
+# shared_dat_f = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "forest_restriction_max"), key = ~my_key, group = 'all')
+# 
+# shared_dat_m = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "mine_restriction_max"), key = ~my_key)
+# 
+# shared_dat_og = crosstalk::SharedData$new(bc_regs %>% filter(industry_name == "og_restriction_max"), key = ~my_key)
+# 
+# shared_images_f = crosstalk::SharedData$new(bc_regs %>%
+#                                               dplyr::select(my_key,image_path) %>%
+#                                               st_drop_geometry(),
+#                                             key = ~my_key)
+```
+
 Column {.tabset}
 -----------------------------------------------------------------------
+
+**Provincial Figures**
 
 ### Forestry
 
@@ -202,108 +114,81 @@ main_plot_m
 main_plot_og
 ```
 
-Column {.tabset}
+Column 
 -------------------------------------------------------------------------
 
-### Regional District
-```{r}
+### Regional Districts - Click on the Region to See More Information
+```{r regional_district_plot_plus_linked_histogram}
+#Set up reactive, shared data environment.
+bc_regs_for_plotly <- crosstalk::SharedData$new(bc_regs_wide)
 
-region_filter = filter_select(
-  id = 'region_filter',
-  label = "Selection Regional District",
-  sharedData = shared_images_f,
-  group = ~my_key,
-  multiple = F
-)
-
-### Working, but needing some love, plotly image viewer.
-p = plot_ly(shared_images_f,
-            x = 5/2, y = 1,
-            type ='scatter'
-            ) %>%
-  layout(
-    images = list(
-      list(
-        # source = raster2uri(as.raster(test_image)),
-        source = ~raster2uri(as.raster(readJPEG(image_path))),
-        x = -0.8,
-        y = 0.05,
-        xref = "x",
-        yref = "y",
-        sizex = 5,
-        sizey = 3,
-        xanchor = 'left',
-        yanchor = 'bottom',
-        sizing = "stretch"
-      )
-    ),
-    margin = list(t = 10)
-  ) %>%
-  layout(plot_bgcolor='#e5ecf6',
-         xaxis = list(
-           zerolinecolor = '#ffff',
-           zerolinewidth = 2,
-           gridcolor = 'ffff'),
-         yaxis = list(
-           zerolinecolor = '#ffff',
-           zerolinewidth = 2,
-           gridcolor = 'ffff'),
-         showlegend = FALSE)
-
-# p
-
-
-
-
-
- # p = shared_images_f %>% 
- #  plot_ly() %>%
- #  layout(
- #    images = list(
- #      list(
- #        # source = raster2uri(as.raster(test_image)),
- #        source = ~raster2uri(as.raster(readJPEG(image_path))),
- #        x = 0,
- #        y = 0,
- #        xref = "x",
- #        yref = "y",
- #        x = 1,
- #        y = 3,
- #        sizex = 5,
- #        sizey = 3,
- #        xanchor = 'left',
- #        yanchor = 'bottom'
- #        # sizing = "stretch"
- #      )
- #    ),
- #    margin = list(t = 10)
- #  ) %>%
- #  layout(plot_bgcolor='#e5ecf6',
- #         xaxis = list(
- #           zerolinecolor = '#ffff',
- #           zerolinewidth = 2,
- #           gridcolor = 'ffff'),
- #         yaxis = list(
- #           zerolinecolor = '#ffff',
- #           zerolinewidth = 2,
- #           gridcolor = 'ffff'))
-
-card(
-  card_header(region_filter),
-  card_body(p)
-)
-# bscols(
-#   list(
-#   region_filter,
-#   p
-#   )
+# # Make a crosstalk filter for max restriction value.
+# max_rlevel_selector = filter_select(
+#   id = 'max_restriction_level_slider',
+#   label = 'Restriction Level',
+#   sharedData = bc_regs_for_plotly,
+#   group = ~max_restriction_value,
+#   multiple = F
 # )
+
+# initiate a plotly object
+base <- bc_regs_for_plotly %>%
+  plotly::plotly_empty()
+  # highlight(
+  #   on = 'plotly_click',
+  #   off = 'plotly_doubleclick',
+  #   opacityDim = 0.5
+  # )
+
+ggmap_plot = ggplot() +
+  geom_sf(data = bc_regs_for_plotly,
+          aes(text = ADMIN_AREA_NAME),
+          fill = 'grey') +
+  ggthemes::theme_map()
+ggmap_plot = ggplotly(ggmap_plot, tooltip = 'ADMIN_AREA_NAME')
+
+  # highlight(
+  #   on = 'plotly_click',
+  #   off = 'plotly_doubleclick',
+  #   opacityDim = 0.5
+  # )
+
+# plotly_map = base %>%
+#   # group_by(key) %>%
+#   # add_scattergeo() %>%
+#   highlight(
+#     on = 'plotly_click',
+#     off = 'plotly_doubleclick',
+#     opacityDim = 0.5
+#   )
+
+plotly_barplot = bc_regs_for_plotly %>%
+  plot_ly() %>%
+  add_bars(x = ~max_restriction_0, y = 0, orientation = 'h', opacity = 0) %>%
+  add_bars(x = ~max_restriction_1, y = 1, orientation = 'h', opacity = 0) %>%
+  add_bars(x = ~max_restriction_2, y = 2, orientation = 'h', opacity = 0) %>%
+  add_bars(x = ~max_restriction_3, y = 3, orientation = 'h', opacity = 0) %>%
+  add_bars(x = ~max_restriction_4, y = 4, orientation = 'h', opacity = 0) %>%
+  add_bars(x = ~max_restriction_5, y = 5, orientation = 'h', opacity = 0)
+           # transforms = list(
+           #   list(
+           #     type = 'aggregate',
+           #     groups = ~max_restriction_value,
+           #     aggregations = list(
+           #       list(
+           #         target = 'x', func = 'sum', enabled = T
+           #       )
+           #     )
+           #   )
+           # )
+
+subplot(ggmap_plot, plotly_barplot, nrows = 2) %>%
+  layout(barmode = "overlay", showlegend = FALSE) %>%
+  highlight(
+    dynamic = TRUE,
+    selectize = F,
+    selected = attrs_selected(opacity = 0.9),
+    color = 'rgba(152,78,163,1)'
+  )
 ```
-
-### Datatable
-```{r}
-DT::datatable(shared_dat_f)
-```
-
-
 
