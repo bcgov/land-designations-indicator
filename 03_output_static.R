@@ -242,10 +242,12 @@ for(industry in c("forest_restriction_max","mine_restriction_max","og_restrictio
       mutate(max_restriction_value = as.factor(max_restriction_value))
 
     g = ggplot() +
-      geom_sf(data = the_region, col = 'black', fill = 'transparent') +
       geom_sf(aes(fill = max_restriction_value),
               col = 'transparent',
               data = choro_dat) +
+      geom_sf(data = the_region, col = 'black', fill = 'transparent') +
+      ggspatial::annotation_scale() +
+      labs(title = region_name) +
       theme_minimal() +
       theme(legend.position = 'none',
             panel.grid = element_blank(),
@@ -259,8 +261,17 @@ for(industry in c("forest_restriction_max","mine_restriction_max","og_restrictio
     }
 
     ggsave(filename = paste0('tmp/regdist_figs/',industry,"_",region_name,".jpeg"),
-           plot = g, width = 6, height = 4, dpi = 150)
+           plot = g, width = 4, height = 4, dpi = 150)
     file.copy(from = paste0('tmp/regdist_figs/',industry,"_",region_name,".jpeg"),
-              to = paste0('land_designations_webapp/www/',industry,"_",region_name,".jpeg"))
+              to = paste0('land_designations_webapp/www/regdist_figs/',industry,"_",region_name,".jpeg"))
   }
 }
+
+library(magick)
+list.files(path = 'tmp/regdist_figs/') %>%
+  map( ~ {
+    image_read(paste0('tmp/regdist_figs/',.x)) %>%
+      image_scale('x250') %>%
+      image_convert(format = 'svg') %>%
+      image_write(paste0('tmp/regdist_svgs/',str_replace(.x,"\\jpeg","svg")))
+  })

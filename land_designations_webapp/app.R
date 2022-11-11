@@ -133,6 +133,9 @@ server <- function(input, output) {
         mutate(ADMIN_AREA_NAME = "Provincial")
     )
 
+  # #Replace character "NA" with actual NA.
+  # regdist_sum_dat[regdist_sum_dat$max_restriction_value == 'NA',] = NA
+
   ### Reactive entities
   province_fig_dat_filtered = reactive({
     prov_fig_dat %>%
@@ -198,8 +201,12 @@ server <- function(input, output) {
     }
 
     p = dat %>%
+      mutate(max_restriction_value = replace(max_restriction_value,
+                                             max_restriction_value == "NA",
+                                             NA)) %>%
       arrange(max_rlevel) %>%
       mutate(max_restriction_value = fct_inorder(max_restriction_value)) %>%
+      # mutate(area_prop = 100*round(area_prop,4)) %>%
       ggplot() +
       geom_col(aes(x = max_restriction_value,
                    y = area_prop,
