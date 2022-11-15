@@ -1,8 +1,9 @@
 library(shiny)
 library(tidyverse)
+library(leaflet)
 # library(magick)
 # library(ggimage)
-# library(ggtext)
+library(ggtext)
 # library(slickR)
 library(sf)
 library(bslib)
@@ -11,6 +12,19 @@ library(DT)
 # setwd("C:/Users/CMADSEN/Downloads/LocalR/land-designations-indicator")
 
 rm(list = ls())
+
+# ld_theme <- bs_theme(
+#   bg = "#F2F2F2", fg = "#131313",
+#   # Controls the accent (e.g., hyperlink, button, etc) colors
+#   primary = "#80C4FC", secondary = "#6877EF",
+#   # base_font = c("Grandstander", "sans-serif"),
+#   base_font = c("BC Sans","Bold"),
+#   # code_font = c("Courier", "monospace"),
+#   code_font = c("BCSans-Regular"),
+#   heading_font = c("BCSans-Regular"),
+#   # Can also add lower-level customization
+#   "input-border-color" = "#EA80FC"
+# )
 
 prov_fig_dat = data.frame(industry = c('Forestry','Mining','Oil and Gas'),
                           prov_image_path = c('forest_restriction_plot.jpeg',
@@ -32,7 +46,8 @@ industry_filter = selectInput(
 ui <- bslib::page_fluid(
   titlePanel(
     title = "Land Designation Indicator"
-  ),
+    ),
+    theme = 'cerulean',
   sidebarLayout(
     sidebarPanel(
       width = 5,
@@ -42,17 +57,25 @@ ui <- bslib::page_fluid(
       plotOutput('bar_fig'#, height = 500)
       )
     ),
-    mainPanel(
-      width = 7,
-      card(
-        card_header(),
-        card_body(
-          # industry_filter,
-          uiOutput('jpeg_fig', width = '100px'),
-          plotOutput('map_insert', height = '200px')
-        ),
-        width = '100%'
-      )
+    mainPanel(width = 7,
+              tabsetPanel(
+                tabPanel(
+                  title = "Static Map",
+                  card(
+                    card_header(),
+                    card_body(
+                      uiOutput('jpeg_fig', width = '50px'),
+                      plotOutput('map_insert', height = '200px')
+                    ),
+                    width = '100%',
+                    style = 'z-index:10;'
+                  )
+                ),
+                tabPanel(
+                  title = "Interactive Leaflet Map",
+                  leafletOutput('leaflet_map', height = '550px')
+                )
+              )
     )
   )
 )
@@ -148,6 +171,11 @@ server <- function(input, output) {
       filter(ADMIN_AREA_NAME %in% input$spatial_scale_selector)
   })
 
+  bcRegsLeafletDat = reactive({
+    bc_regs %>%
+      filter(industry_name %in% input$industry_filter)
+  })
+
   regDistSumms = reactive({
     regdist_sum_dat %>%
       filter(industry_name %in% input$industry_filter) %>%
@@ -217,16 +245,18 @@ server <- function(input, output) {
       envreportutils::theme_soe() +
       # theme_bw() +
       theme(legend.position = 'none',
-            text = element_text(size = 16))
+            text = element_text(size = 16),
+            axis.title.y = element_markdown(),
+            axis.title.x = element_markdown())
 
     if(input$spatial_scale_selector == "Provincial"){
       p = p + labs(x = "",
-           y = "Proportion of Province (m^2)",
-           fill = "")
+                   y = "Proportion of Province (m<sup>2</sup>)",
+                   fill = "")
     } else {
       p = p + labs(x = "",
-               y = "Proportion of Regional District (m^2)",
-               fill = "")
+                   y = "Proportion of Regional District (m<sup>2</sup>)",
+                   fill = "")
     }
 
     if(input$industry_filter == "Forestry") p = p+scale_fill_brewer(palette = 'Greens', na.value = "grey")
@@ -245,6 +275,47 @@ server <- function(input, output) {
            "_",
            regDistSumms()$ADMIN_AREA_NAME,
            ".jpeg")
+  })
+
+  output$leaflet_map = renderLeaflet({
+
+    my_pal = leaflet::colorNumeric(palette = 'viridis',
+                                   domain = bc_regs$prop_regdist_area)
+    l = leaflet()
+
+    for(i in c(0:5)){
+
+      # my_popups = bcRegsLeafletDat() %>%
+      #   filter(max_rlevel == i) %>%
+      #   mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/og_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>%
+      #   pull(my_popup)
+
+
+      l = l %>%
+        addPolygons(data = bcRegsLeafletDat() %>%
+                      filter(max_rlevel == i),
+                    color = 'black',
+                    weight = 3,
+                    highlightOptions = highlightOptions(color = '#FDE725FF',
+                                                        weight = 6),
+                    label = ~paste0(ADMIN_AREA_NAME,": ",100*round(prop_regdist_area,2),"%"),
+                    fillColor = ~my_pal(prop_regdist_area),
+                    fill = T,
+                    fillOpacity = 1,
+                    # popup = my_popups,
+                    # popupOptions = popupOptions(minWidth = 350),
+                    group = ~as.character(paste0("Max Restriction Level ",i)))
+    }
+
+    l %>%
+      addProviderTiles(provider = 'Stamen.TerrainBackground') %>%
+      envreportutils::add_bc_home_button() %>%
+      envreportutils::set_bc_view() %>%
+      addLayersControl(baseGroups = paste0("Max Restriction Level ",c(0:5)),
+                       options = layersControlOptions(collapsed = F)) %>%
+      addLegend(position = 'bottomright',
+                pal = my_pal,
+                values = c(bc_regs$prop_regdist_area))
   })
 }
 

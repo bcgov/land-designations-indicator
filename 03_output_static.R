@@ -23,12 +23,22 @@ if (!exists("out")) dir.create("out", showWarnings = FALSE)
 if (!exists("land_designations_webapp/www")) dir.create("land_designations_webapp/www", showWarnings = FALSE)
 if (!exists("cons_area_all")) load("tmp/clean.RData")
 if (!exists("ld_with_reg")) load("tmp/ld_with_reg.RData")
-if (!exists('bc_regs_small')) bc_regs = read_sf('tmp/bc_regdists.gpkg')
+if(!file.exists('tmp/bc_regdists.gpkg')){
+
+  #This code doesn't run to completion if you run it from the 'if' on line 26... strange.
+  bc_regs = bcmaps::regional_districts()
+
+  bc_regs_small = st_simplify(bc_regs, dTolerance = 2500)
+
+  write_sf(bc_regs_small, 'tmp/bc_regdists.gpkg')
+  write_sf(bc_regs_small, 'land_designations_webapp_3col/www/bc_regdists.gpkg')
+
+  rm(bc_regs_small); rm(bc_regs)
+}
+if (!exists('bc_regs')) bc_regs = read_sf('tmp/bc_regdists.gpkg')
 # if (!exists("ld")) load("tmp/raw_data_vect.RData")
 
-# bc_regs = bcmaps::regional_districts()
-# bc_regs_small = st_simplify(bc_regs, dTolerance = 2500)
-# write_sf(bc_regs_small, 'tmp/bc_regdists.gpkg')
+
 
 #Grey colour
 my_grey = '#C5C5C5'
@@ -216,12 +226,39 @@ area_by_regdist_and_industry_and_restriction_value = ld_with_reg %>%
   summarise(area = sum(area, na.rm=T),
             .groups = 'drop') %>%
   left_join(bc_regdists_area) %>%
-  mutate(prop_regdist_area = area/regdist_area) %>%
+  rename(zone_area = regdist_area) %>%
+  mutate(proportional_area = area/zone_area) %>%
   ungroup()
 
-area_by_regdist_and_industry_and_restriction_value
+# Add 3 rows - one for each industry at the scale of the entire province
+bc_reg_dat = area_by_regdist_and_industry_and_restriction_value %>%
+  bind_rows(
+    area_by_regdist_and_industry_and_restriction_value %>%
+      group_by(industry_name, max_restriction_value) %>%
+      summarise(area = sum(area,na.rm=T),
+                zone_area = sum(zone_area,na.rm=T),
+                proportional_area = area / zone_area) %>%
+      mutate(ADMIN_AREA_NAME = "Provincial")
+  ) %>%
+  #Rename restriction levels from numeric levels to character labels.
+  mutate(max_restriction_value = case_when(
+    max_restriction_value == 0 ~ "None",
+        max_restriction_value == 1 ~ "Low",
+        max_restriction_value == 2 ~ "Medium",
+        max_restriction_value == 3 ~ "High",
+        max_restriction_value == 4 ~ "Full",
+        max_restriction_value == 5 ~ "Protected"
+  )) %>%
+  #Optional: collapse categories 4 and 5 into one single category called "Full Restriction"
+    mutate(max_restriction_value = replace(max_restriction_value, max_restriction_value == "Protected", "Full")) %>%
+    group_by(industry_name,max_restriction_value,ADMIN_AREA_NAME) %>%
+  summarise(proportional_area = sum(proportional_area,na.rm=T)) %>%
+  ungroup() %>%
+  mutate(max_restriction_value = factor(max_restriction_value,
+                                        levels = c("Full","High","Medium",
+                                                   "Low","None")))
 
-write.csv(area_by_regdist_and_industry_and_restriction_value,'land_designations_webapp/www/ld_choro.csv',
+write.csv(bc_reg_dat,'land_designations_webapp_3col/www/bc_reg_dat.csv',
           row.names = F)
 
 # For each industry and regional district, make a high-resolution map piece.
@@ -271,7 +308,7 @@ library(magick)
 list.files(path = 'tmp/regdist_figs/') %>%
   map( ~ {
     image_read(paste0('tmp/regdist_figs/',.x)) %>%
-      image_scale('x250') %>%
+      image_scale('x350') %>%
       image_convert(format = 'svg') %>%
       image_write(paste0('tmp/regdist_svgs/',str_replace(.x,"\\jpeg","svg")))
   })

@@ -126,16 +126,17 @@ bc_regs_f = bc_regs_each_r_level %>%
   st_transform(4326) %>% 
   filter(industry_name == "forest_restriction_max")
 
-my_popups_f = bc_regs_f %>% 
-  filter(max_restriction_value == 0) %>% 
-  mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/forest_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>% 
-  pull(my_popup)
-
 my_pal = leaflet::colorNumeric(palette = 'viridis', 
                                domain = bc_regs_f$prop_regdist_area)
 l = leaflet()
 
 for(i in c(0:5)){
+  
+  my_popups_f = bc_regs_f %>% 
+  filter(max_restriction_value == i) %>% 
+  mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/forest_restriction_max_",ADMIN_AREA_NAME,".svg'{width='500'}>")) %>% 
+  pull(my_popup)
+  
   l = l %>% 
     addPolygons(data = bc_regs_f %>% filter(max_restriction_value == i), 
                 color = 'black',
@@ -145,9 +146,9 @@ for(i in c(0:5)){
                 label = ~paste0(ADMIN_AREA_NAME,": ",100*round(prop_regdist_area,2),"%"),
                 fillColor = ~my_pal(prop_regdist_area),
                 fill = T,
-                fillOpacity = 1,
+                fillOpacity = 0.75,
                 popup = my_popups_f,
-                popupOptions = popupOptions(minWidth = 300),
+                popupOptions = popupOptions(minWidth = 350),
                 group = ~paste0("Max Restriction Level ",i))
 }
 
@@ -169,16 +170,18 @@ bc_regs_m = bc_regs_each_r_level %>%
   st_transform(4326) %>% 
   filter(industry_name == "mine_restriction_max")
 
-my_popups_m = bc_regs_m %>% 
-  filter(max_restriction_value == 0) %>% 
-  mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/mine_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>% 
-  pull(my_popup)
-
 my_pal = leaflet::colorNumeric(palette = 'viridis', 
                                domain = bc_regs_m$prop_regdist_area)
 l = leaflet()
 
 for(i in c(0:5)){
+  
+  my_popups_m = bc_regs_m %>% 
+  filter(max_restriction_value == i) %>% 
+  mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/mine_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>% 
+  pull(my_popup)
+  
+  
   l = l %>% 
     addPolygons(data = bc_regs_m %>% filter(max_restriction_value == i), 
                 color = 'black',
@@ -188,9 +191,9 @@ for(i in c(0:5)){
                 label = ~paste0(ADMIN_AREA_NAME,": ",100*round(prop_regdist_area,2),"%"),
                 fillColor = ~my_pal(prop_regdist_area),
                 fill = T,
-                fillOpacity = 1,
+                fillOpacity = 0.75,
                 popup = my_popups_m,
-                popupOptions = popupOptions(minWidth = 300),
+                popupOptions = popupOptions(minWidth = 350),
                 group = ~as.character(paste0("Max Restriction Level ",i)))
 }
 
@@ -212,16 +215,17 @@ bc_regs_og = bc_regs_each_r_level %>%
   st_transform(4326) %>% 
   filter(industry_name == "og_restriction_max")
 
-my_popups_og = bc_regs_og %>% 
-  filter(max_restriction_value == 0) %>% 
-  mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/og_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>% 
-  pull(my_popup)
-
 my_pal = leaflet::colorNumeric(palette = 'viridis', 
                                domain = bc_regs_og$prop_regdist_area)
 l = leaflet()
 
 for(i in c(0:5)){
+  
+  my_popups_og = bc_regs_og %>% 
+  filter(max_restriction_value == i) %>% 
+  mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/og_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>% 
+  pull(my_popup)
+
   l = l %>% 
     addPolygons(data = bc_regs_og %>% filter(max_restriction_value == i), 
                 color = 'black',
@@ -231,9 +235,9 @@ for(i in c(0:5)){
                 label = ~paste0(ADMIN_AREA_NAME,": ",100*round(prop_regdist_area,2),"%"),
                 fillColor = ~my_pal(prop_regdist_area),
                 fill = T,
-                fillOpacity = 1,
+                fillOpacity = 0.75,
                 popup = my_popups_og,
-                popupOptions = popupOptions(minWidth = 300),
+                popupOptions = popupOptions(minWidth = 350),
                 group = ~as.character(paste0("Max Restriction Level ",i)))
 }
 
@@ -255,29 +259,14 @@ l %>%
 Regional Districts
 </p>
 ```
+
 ```{r regional_district_plot_plus_linked_histogram}
 #Set up reactive, shared data environment.
 bc_regs_for_plotly <- crosstalk::SharedData$new(bc_regs_wide)
-# bc_regs_for_plotly <- crosstalk::SharedData$new(bc_regs_each_r_level)
-# bc_regs_for_plotly_long <- crosstalk::SharedData$new(bc_regs_each_r_level, key = 'key', group = 'all')
-
-# # Make a crosstalk filter for max restriction value.
-# max_rlevel_selector = filter_select(
-#   id = 'max_restriction_level_slider',
-#   label = 'Restriction Level',
-#   sharedData = bc_regs_for_plotly,
-#   group = ~max_restriction_value,
-#   multiple = F
-# )
 
 # initiate a plotly object
 base <- bc_regs_for_plotly %>%
   plotly::plotly_empty()
-# highlight(
-#   on = 'plotly_click',
-#   off = 'plotly_doubleclick',
-#   opacityDim = 0.5
-# )
 
 ggmap_plot = ggplot() +
   geom_sf(data = bc_regs_for_plotly,
@@ -285,21 +274,6 @@ ggmap_plot = ggplot() +
   ggthemes::theme_map()
 ggmap_plot = ggplotly(ggmap_plot, tooltip = 'ADMIN_AREA_NAME') %>% 
   layout(autosize = F, width = 700, height = 700)
-
-# highlight(
-#   on = 'plotly_click',
-#   off = 'plotly_doubleclick',
-#   opacityDim = 0.5
-# )
-
-# plotly_map = base %>%
-#   # group_by(key) %>%
-#   # add_scattergeo() %>%
-#   highlight(
-#     on = 'plotly_click',
-#     off = 'plotly_doubleclick',
-#     opacityDim = 0.5
-#   )
 
 plotly_barplot = bc_regs_for_plotly %>%
   plot_ly(
