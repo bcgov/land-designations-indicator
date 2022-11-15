@@ -8,7 +8,6 @@ library(bslib)
 library(bs4Dash)
 library(fresh)
 library(plotly)
-# library(DT)
 
 rm(list = ls())
 
