@@ -12,10 +12,14 @@ library(plotly)
 rm(list = ls())
 
 # Row heights
-my_row_height = '300px'
+# my_row_height = '300px'
+my_row_height_minimized = '300px'
+my_row_height_maximized = '500px'
+my_row_width_minimized = '350px'
+my_row_width_maximized = '550px'
 
 # Sidebar width
-my_sidebar_width = '35%'
+my_sidebar_width = '40%'
 
 ## Body designs:
 
@@ -24,24 +28,24 @@ basic_body = bs4DashBody(width = 5,
                          #3 rows, one per industry, with regional jpeg on left, barplot on right.
                          fluidRow(
                            column(width = 6,
-                                  uiOutput('jpeg_fig_forest', height = my_row_height)
+                                  uiOutput('jpeg_fig_forest', height = 'auto')
                            ),
                            column(width = 6,
-                                  plotlyOutput('barplot_forest', height = my_row_height))
+                                  plotlyOutput('barplot_forest', height = 'auto'))
                          ),
                          fluidRow(
                            column(width = 6,
-                                  uiOutput('jpeg_fig_mine', height = my_row_height)
+                                  uiOutput('jpeg_fig_mine', height = 'auto')
                            ),
                            column(width = 6,
-                                  plotlyOutput('barplot_mine', height = my_row_height))
+                                  plotlyOutput('barplot_mine', height = 'auto'))
                          ),
                          fluidRow(
                            column(width = 6,
-                                  uiOutput('jpeg_fig_og', height = my_row_height)
+                                  uiOutput('jpeg_fig_og', height = 'auto')
                            ),
                            column(width = 6,
-                                  plotlyOutput('barplot_og', height = my_row_height))
+                                  plotlyOutput('barplot_og', height = 'auto'))
                          )
 )
 
@@ -54,7 +58,7 @@ accordion_body = bs4DashBody(width = 5,
                                  title = "Forestry",
                                  crosstalk::bscols(
                                    uiOutput('jpeg_fig_forest'),
-                                   plotlyOutput('barplot_forest', height = my_row_height)
+                                   plotlyOutput('barplot_forest', height = 'auto')
                                  ),
                                  collapsed = F
                                ),
@@ -62,7 +66,7 @@ accordion_body = bs4DashBody(width = 5,
                                  title = "Mining",
                                  crosstalk::bscols(
                                    uiOutput('jpeg_fig_mine'),
-                                   plotlyOutput('barplot_mine', height = my_row_height)
+                                   plotlyOutput('barplot_mine', height = 'auto')
                                  ),
                                  collapsed = F
                                ),
@@ -70,7 +74,7 @@ accordion_body = bs4DashBody(width = 5,
                                  title = "Oil and Gas",
                                  crosstalk::bscols(
                                    uiOutput('jpeg_fig_og'),
-                                   plotlyOutput('barplot_og', height = my_row_height)
+                                   plotlyOutput('barplot_og', height = 'auto')
                                  ),
                                  collapsed = F
                                )
@@ -87,7 +91,7 @@ cards_body = bs4DashBody(width = 5,
                                 card_body(
                                   crosstalk::bscols(
                                     uiOutput('jpeg_fig_forest'),
-                                    plotlyOutput('barplot_forest', height = my_row_height)
+                                    plotlyOutput('barplot_forest', height = 'auto')
                                   )
                                 )
                            )
@@ -99,7 +103,7 @@ cards_body = bs4DashBody(width = 5,
                                 card_body(
                                   crosstalk::bscols(
                                     uiOutput('jpeg_fig_mine'),
-                                    plotlyOutput('barplot_mine', height = my_row_height)
+                                    plotlyOutput('barplot_mine', height = 'auto')
                                   )
                                 )
                            )
@@ -111,7 +115,7 @@ cards_body = bs4DashBody(width = 5,
                                 card_body(
                                   crosstalk::bscols(
                                     uiOutput('jpeg_fig_og'),
-                                    plotlyOutput('barplot_og', height = my_row_height)
+                                    plotlyOutput('barplot_og', height = 'auto')
                                   )
                                 )
                            )
@@ -123,20 +127,20 @@ bscols_body = bs4DashBody(width = 5,
                           #3 rows, one per industry, with regional jpeg on left, barplot on right.
                           fluidRow(
                             bscols(
-                              uiOutput('jpeg_fig_forest', height = my_row_height),
-                              plotlyOutput('barplot_forest', height = my_row_height)
+                              uiOutput('jpeg_fig_forest', height = 'auto'),
+                              plotlyOutput('barplot_forest', height = 'auto')
                             )
                           ),
                           fluidRow(
                             bscols(
-                              uiOutput('jpeg_fig_mine', height = my_row_height),
-                              plotlyOutput('barplot_mine', height = my_row_height)
+                              uiOutput('jpeg_fig_mine', height = 'auto'),
+                              plotlyOutput('barplot_mine', height = 'auto')
                             )
                           ),
                           fluidRow(
                             bscols(
-                              uiOutput('jpeg_fig_og', height = my_row_height),
-                              plotlyOutput('barplot_og', height = my_row_height)
+                              uiOutput('jpeg_fig_og', height = 'auto'),
+                              plotlyOutput('barplot_og', height = 'auto')
                             )
                           )
 )
@@ -146,32 +150,35 @@ boxes_body = bs4DashBody(width = 5,
                          #3 rows, one per industry, with regional jpeg on left, barplot on right.
                          fluidRow(
                            box(width = 12,
-                             title = "Forestry Restrictions",
-                             status = 'success',
+                               title = "Forestry Restrictions",
+                               status = 'success',
+                               maximizable = T,
                                crosstalk::bscols(
                                  uiOutput('jpeg_fig_forest'),
-                                 plotlyOutput('barplot_forest', height = my_row_height)
-                             )
+                                 plotlyOutput('barplot_forest', height = 'auto')
+                               )
                            )
                          ),
                          fluidRow(
                            box(width = 12,
                                title = 'Mining Restrictions',
                                status = 'info',
+                               maximizable = T,
                                crosstalk::bscols(
                                  uiOutput('jpeg_fig_mine'),
-                                 plotlyOutput('barplot_mine', height = my_row_height)
-                             )
+                                 plotlyOutput('barplot_mine', height = 'auto')
+                               )
                            )
                          ),
                          fluidRow(
                            box(width = 12,
-                             title = "Oil and Gas Restrictions",
-                             status = 'danger',
+                               title = "Oil and Gas Restrictions",
+                               status = 'danger',
+                               maximizable = T,
                                crosstalk::bscols(
                                  uiOutput('jpeg_fig_og'),
-                                 plotlyOutput('barplot_og', height = my_row_height)
-                             )
+                                 plotlyOutput('barplot_og', height = 'auto')
+                               )
                            )
                          )
 )
@@ -183,20 +190,40 @@ my_theme = create_theme(
     danger = '#F77408'
   ),
   bs4dash_layout(
-    sidebar_width = my_sidebar_width
+    sidebar_width = my_sidebar_width,
+    screen_header_collapse = 1
   )
+)
+
+reset_focus_button = div(
+  actionButton(
+    inputId = 'reset_to_province',
+    label = "Reset Selection to Province"
+  ),
+  style = 'text-align:center;'
 )
 
 ui <- bs4Dash::bs4DashPage(
   freshTheme = my_theme,
-  header = bs4DashNavbar(h4("Show/Hide Province Map")),
+  header = bs4DashNavbar(
+    title = div(
+      h4("Regional Districts of BC",style = "color:white;text-align:center;padding-top:20px"),
+      h5("Click a Regional District Refine Results",style = "color:white;text-align:center;")
+    ),
+    sidebarIcon = div(
+      tags$i(
+        class = "fa-solid fa-magnifying-glass",
+        style = "color:#0072B2;font-size:25px",
+        title = "Show or hide Regional District map"
+      )
+    )
+  ),
   sidebar = bs4DashSidebar(
-    # height = 1000,
+    id = 'leaflet_sidebar',
     minified = F,
-    leafletOutput('sel_reg_map'),
-    actionButton(
-      inputId = 'reset_to_province',
-      label = "Reset Selection to Province"
+    leafletOutput('sel_reg_map', height = "650px"),
+    column(width = 4, offset = 4,
+    reset_focus_button
     )
   ),
   body = boxes_body,
@@ -233,6 +260,18 @@ server <- function(input, output) {
 
   ### Reactive entities
 
+  # Figure dimensions, determined in part by whether or not the sidebar is collapsed.
+  figureHeight = reactive({
+    if(input$leaflet_sidebar){
+      my_row_height_minimized
+    } else {my_row_height_maximized}
+  })
+
+  figureWidth = reactive({
+    if(input$leaflet_sidebar){
+      my_row_width_minimized
+    } else {my_row_width_maximized}
+  })
   # Leaflet map to select regional districts
 
   output$sel_reg_map <- renderLeaflet({
@@ -243,10 +282,10 @@ server <- function(input, output) {
         layerId = ~ADMIN_AREA_NAME,
         fillColor = ~"Green",
         weight = 2,
-        opacity = 0.75,
+        opacity = 0.5,
         color = 'black',
         dashArray = '2',
-        fillOpacity = 0.7,
+        fillOpacity = 0.25,
         highlightOptions = highlightOptions(color = "red", weight = 3,
                                             bringToFront = TRUE),
         label = ~ADMIN_AREA_NAME,
@@ -254,7 +293,9 @@ server <- function(input, output) {
           style = list("font-weight" = "normal", padding = "4px 8px"),
           textsize = "15px",
           direction = 'auto')) %>%
-      envreportutils::add_bc_home_button()
+      envreportutils::add_bc_home_button() %>%
+      envreportutils::set_bc_view()
+
   })
 
   click_regdist <- reactiveVal('Provincial')
@@ -290,98 +331,107 @@ server <- function(input, output) {
   output$jpeg_fig_forest = renderUI({
     if(click_regdist() == "Provincial"){
       tags$img(src = paste0('forest_',jpeg_filepaths_df_selected()$image_path),
-               height = my_row_height)
+               height = figureHeight(),
+               width = figureWidth())
     } else {
       tags$img(src = paste0("regdist_figs/forest_",
                             jpeg_filepaths_df_selected()$image_path),
-               width = my_row_height)
+               height = figureHeight(),
+               width = figureWidth())
     }
   })
 
   output$jpeg_fig_mine = renderUI({
     if(click_regdist() == "Provincial"){
       tags$img(src = paste0('mine_',jpeg_filepaths_df_selected()$image_path),
-               height = my_row_height)
+               height = figureHeight(),
+               width = figureWidth())
     } else {
       tags$img(src = paste0("regdist_figs/mine_",
                             jpeg_filepaths_df_selected()$image_path),
-               width = my_row_height)
+               height = figureHeight(),
+               width = figureWidth())
     }
   })
 
   output$jpeg_fig_og = renderUI({
     if(click_regdist() == "Provincial"){
       tags$img(src = paste0('og_',jpeg_filepaths_df_selected()$image_path),
-               height = my_row_height)
+               height = figureHeight(),
+               width = figureWidth())
     } else {
       tags$img(src = paste0("regdist_figs/og_",
                             jpeg_filepaths_df_selected()$image_path),
-               width = my_row_height)
+               height = figureHeight(),
+               width = figureWidth())
     }
   })
 
   output$barplot_forest = renderPlotly({
     ggplotly(
-    ggplot(bc_reg_dat_selected() %>%
-             filter(industry_name == "forest_restriction_max") %>%
-             mutate(Proportion = paste0(round(100*proportional_area,1),"%")),
-           aes(label = Proportion)) +
-      geom_col(aes(x = max_restriction_value,
-                   y = proportional_area,
-                   fill = max_restriction_value)) +
-      coord_flip() +
-      scale_fill_brewer(palette = 'Greens', direction = -1) +
-      scale_y_continuous(labels = scales::label_percent()) +
-      labs(x = "Restriction Level",
-           y = "Proportional Area (m<sup>2</sup>)") +
-      theme_bw() +
-      theme(axis.text = element_text(size = 12),
-            axis.title.y = element_text(size = 16),
-            legend.position = 'none',
-            axis.title.x = element_markdown(size = 16)),
-    tooltip = 'label')
+      ggplot(bc_reg_dat_selected() %>%
+               filter(industry_name == "forest_restriction_max") %>%
+               mutate(Proportion = paste0(round(100*proportional_area,1),"%")),
+             aes(label = Proportion)) +
+        geom_col(aes(x = max_restriction_value,
+                     y = proportional_area,
+                     fill = max_restriction_value)) +
+        coord_flip() +
+        scale_fill_brewer(palette = 'Greens', direction = -1) +
+        scale_y_continuous(labels = scales::label_percent()) +
+        labs(x = "Restriction Level",
+             y = "Proportional Area (m<sup>2</sup>)") +
+        theme_bw() +
+        theme(axis.text = element_text(size = 12),
+              axis.title.y = element_text(size = 16),
+              legend.position = 'none',
+              axis.title.x = element_markdown(size = 16)),
+      tooltip = 'label',
+      height = as.numeric(str_extract(figureHeight(), '[0-9]*')))
   })
 
   output$barplot_mine = renderPlotly({
     ggplotly(
-    ggplot(bc_reg_dat_selected() %>%
-             filter(industry_name == "mine_restriction_max")  %>%
-             mutate(Proportion = paste0(round(100*proportional_area,1),"%")),
-           aes(label = Proportion)) +
-      geom_col(aes(x = max_restriction_value,
-                   y = proportional_area,
-                   fill = max_restriction_value)) +
-      coord_flip() +
-      scale_fill_brewer(palette = 'Purples', direction = -1) +
-      labs(x = "Restriction Level",
-           y = "Proportional Area (m<sup>2</sup>)") +
-      theme_bw() +
-      theme(axis.text = element_text(size = 16),
-            axis.title.y = element_text(size = 16),
-            legend.position = 'none',
-            axis.title.x = element_markdown(size = 16)),
-    tooltip = 'label')
+      ggplot(bc_reg_dat_selected() %>%
+               filter(industry_name == "mine_restriction_max")  %>%
+               mutate(Proportion = paste0(round(100*proportional_area,1),"%")),
+             aes(label = Proportion)) +
+        geom_col(aes(x = max_restriction_value,
+                     y = proportional_area,
+                     fill = max_restriction_value)) +
+        coord_flip() +
+        scale_fill_brewer(palette = 'Purples', direction = -1) +
+        labs(x = "Restriction Level",
+             y = "Proportional Area (m<sup>2</sup>)") +
+        theme_bw() +
+        theme(axis.text = element_text(size = 16),
+              axis.title.y = element_text(size = 16),
+              legend.position = 'none',
+              axis.title.x = element_markdown(size = 16)),
+      tooltip = 'label',
+      height = as.numeric(str_extract(figureHeight(), '[0-9]*')))
   })
 
   output$barplot_og = renderPlotly({
     ggplotly(
-    ggplot(bc_reg_dat_selected() %>%
-             filter(industry_name == "og_restriction_max") %>%
-             mutate(Proportion = paste0(round(100*proportional_area,1),"%")),
-           aes(label = Proportion)) +
-      geom_col(aes(x = max_restriction_value,
-                   y = proportional_area,
-                   fill = max_restriction_value)) +
-      coord_flip() +
-      scale_fill_brewer(palette = 'Oranges', direction = -1) +
-      labs(x = "Restriction Level",
-           y = "Proportional Area (m<sup>2</sup>)") +
-      theme_bw() +
-      theme(axis.text = element_text(size = 16),
-            axis.title.y = element_text(size = 16),
-            legend.position = 'none',
-            axis.title.x = element_markdown(size = 16)),
-    tooltip = 'label')
+      ggplot(bc_reg_dat_selected() %>%
+               filter(industry_name == "og_restriction_max") %>%
+               mutate(Proportion = paste0(round(100*proportional_area,1),"%")),
+             aes(label = Proportion)) +
+        geom_col(aes(x = max_restriction_value,
+                     y = proportional_area,
+                     fill = max_restriction_value)) +
+        coord_flip() +
+        scale_fill_brewer(palette = 'Oranges', direction = -1) +
+        labs(x = "Restriction Level",
+             y = "Proportional Area (m<sup>2</sup>)") +
+        theme_bw() +
+        theme(axis.text = element_text(size = 16),
+              axis.title.y = element_text(size = 16),
+              legend.position = 'none',
+              axis.title.x = element_markdown(size = 16)),
+      tooltip = 'label',
+      height = as.numeric(str_extract(figureHeight(), '[0-9]*')))
   })
 }
 
