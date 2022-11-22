@@ -140,6 +140,7 @@ image_read('out/og_restriction_plot.jpeg') %>%
 file.remove(list.files(path = 'land_designations_webapp_3col/www/',
                        pattern = '_plot\\.jpeg',full.names = T))
 
+# Next, copy the 3 jpegs from the /out folder to the land_designations_webapp folder
 list.files(path = 'out/', pattern = "[^des]\\.jpeg") %>%
   map( ~ {
     file.copy(from = paste0('out/',.x),to = paste0('land_designations_webapp_3col/www/',.x))
@@ -193,11 +194,25 @@ bc_reg_dat = area_by_regdist_and_industry_and_restriction_value %>%
 write.csv(bc_reg_dat,'land_designations_webapp_3col/www/bc_reg_dat.csv',
           row.names = F)
 
+
 # Calculate the number of designations per district.
 num_des_per_reg = ld_with_reg %>%
   st_drop_geometry() %>%
-  filter(!duplicated(designations_planarized_id)) %>%
-  count(DISTRICT_NAME, name = 'number_designations')
+  pivot_longer(cols = ends_with('_max'), names_to = 'industry_name', values_to = 'max_restriction_value') %>%
+  filter(max_restriction_value != '0') %>%
+  group_by(DISTRICT_NAME,industry_name) %>%
+  count(max_restriction_value, name = 'number_designations') %>%
+  mutate(total_designations = sum(number_designations)) %>%
+  dplyr::select(DISTRICT_NAME, industry_name, total_designations) %>%
+  distinct()
+
+num_des_per_reg = num_des_per_reg %>%
+  bind_rows(
+    num_des_per_reg %>%
+      group_by(industry_name) %>%
+      summarise(total_designations = sum(total_designations)) %>%
+      mutate(DISTRICT_NAME = 'Provincial')
+  )
 
 write.csv(num_des_per_reg, 'land_designations_webapp_3col/www/number_designations_per_district.csv', row.names = F)
 
@@ -254,12 +269,3 @@ for(industry in c("forest_restriction_max","mine_restriction_max","og_restrictio
               to = paste0('land_designations_webapp_3col/www/regdist_figs/',industry,"_",district_name,".jpeg"))
   }
 }
-
-library(magick)
-list.files(path = 'tmp/regdist_figs/') %>%
-  map( ~ {
-    image_read(paste0('tmp/regdist_figs/',.x)) %>%
-      image_scale('x350') %>%
-      image_convert(format = 'svg') %>%
-      image_write(paste0('tmp/regdist_svgs/',str_replace(.x,"\\jpeg","svg")))
-  })
