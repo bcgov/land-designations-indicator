@@ -90,48 +90,6 @@ reset_focus_button = div(
 
 ## Body design:
 
-# Boxes from {bs4Dash} (hamburger style)
-boxes_body_wide = bs4DashBody(width = 5,
-                              useShinyjs(),
-                              div(textOutput('region_selected_text'),
-                                  style = 'text-align:center;font-size:20px;height:20px'),
-                              #3 rows, one per industry, with regional jpeg on left, barplot on right.
-                              fluidRow(
-                                box(width = 12,
-                                    title = "Forestry Restrictions",
-                                    status = 'success',
-                                    maximizable = T,
-                                    crosstalk::bscols(
-                                      uiOutput('jpeg_fig_forest'),
-                                      plotlyOutput('barplot_forest')
-                                    )
-                                )
-                              ),
-                              fluidRow(
-                                box(width = 12,
-                                    title = 'Mining Restrictions',
-                                    status = 'info',
-                                    maximizable = T,
-                                    crosstalk::bscols(
-                                      uiOutput('jpeg_fig_mine'),
-                                      plotlyOutput('barplot_mine', height = 'auto')
-                                    )
-                                )
-                              ),
-                              fluidRow(
-                                box(width = 12,
-                                    title = "Oil/Gas Restrictions",
-                                    status = 'danger',
-                                    maximizable = T,
-                                    crosstalk::bscols(
-                                      uiOutput('jpeg_fig_og'),
-                                      plotlyOutput('barplot_og', height = 'auto')
-                                    )
-                                )
-                              )
-)
-
-
 # Boxes from {bs4Dash} (hotdog style)
 boxes_body_long = bs4DashBody(width = 5,
                               style = 'div.col-sm-6 {padding:1px}',
@@ -148,7 +106,9 @@ boxes_body_long = bs4DashBody(width = 5,
                                          crosstalk::bscols(
                                            list(
                                              uiOutput('jpeg_fig_forest'),
-                                             plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width)
+                                             plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width),
+                                            div(infoBoxOutput('forest_summary_widget', width = my_box_content_width),
+                                                style = 'margin-left:10%;margin-top:15%')
                                            )
                                          )
                                      )
@@ -162,7 +122,9 @@ boxes_body_long = bs4DashBody(width = 5,
                                          crosstalk::bscols(
                                            list(
                                              uiOutput('jpeg_fig_mine'),
-                                             plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width)
+                                             plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width),
+                                             div(infoBoxOutput('mine_summary_widget', width = my_box_content_width),
+                                                 style = 'margin-left:10%;margin-top:15%')
                                            )
                                          )
                                      )
@@ -175,7 +137,9 @@ boxes_body_long = bs4DashBody(width = 5,
                                          crosstalk::bscols(
                                            list(
                                              uiOutput('jpeg_fig_og'),
-                                             plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width)
+                                             plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width),
+                                             div(infoBoxOutput('og_summary_widget', width = my_box_content_width),
+                                                 style = 'margin-left:10%;margin-top:15%')
                                            )
                                          )
                                      )
@@ -187,15 +151,13 @@ my_theme = create_theme(
     success = '#28a745',
     info = '#6f42c1',
     danger = '#F77408'
-    # lightblue = '#428bca'
   ),
   bs4dash_layout(
     sidebar_width = my_sidebar_width,
     screen_header_collapse = 1
   ),
   bs4dash_button(
-    # default_background_color = '#428bca'
-    default_background_color = '#3c8dbc'
+    default_background_color = '#e6e9ed'
   )
 )
 
@@ -231,7 +193,7 @@ server <- function(input, output) {
   ### Static objects and values
 
   # Number of unique designations per region.
-  num_des_per_reg = read_csv('www/number_designations_per_region.csv')
+  num_des_per_reg = read_csv('www/number_designations_per_district.csv')
 
   # Dataframe of file paths to provincial and district images.
   jpeg_filepaths_df = data.frame(image_path = list.files(path = 'www/regdist_figs',
@@ -252,10 +214,6 @@ server <- function(input, output) {
     dplyr::select(DISTRICT_NAME) %>%
     st_transform(crs = 4326)
 
-  # Add number of unique designations to the bc_regs spatial object.
-  bc_regs = bc_regs %>%
-    left_join(num_des_per_reg)
-
   bc_reg_dat = read_csv('www/bc_reg_dat.csv') %>%
     mutate(max_restriction_value = factor(max_restriction_value,
                                           levels = c("Full","High","Medium","Low","None")))
@@ -273,6 +231,40 @@ server <- function(input, output) {
     if(input$leaflet_sidebar){
       my_row_width_minimized
     } else {my_row_width_maximized}
+  })
+
+  # Summary widgets for the number of designations per industry and area.
+  output$forest_summary_widget = bs4Dash::renderInfoBox({
+    infoBox(title = 'Total Designations',
+            value = num_des_per_reg %>%
+              filter(DISTRICT_NAME == click_regdist()) %>%
+              filter(industry_name == 'forest_restriction_max') %>%
+              pull(total_designations) %>%
+              scales::number(., big.mark = ','),
+            icon = shiny::icon('tree'),
+            color = 'success')
+  })
+
+  output$mine_summary_widget = bs4Dash::renderInfoBox({
+    infoBox(title = 'Total Designations',
+            value = num_des_per_reg %>%
+              filter(DISTRICT_NAME == click_regdist()) %>%
+              filter(industry_name == 'mine_restriction_max') %>%
+              pull(total_designations) %>%
+              scales::number(., big.mark = ','),
+            icon = shiny::icon('mountain'),
+            color = 'info')
+  })
+
+  output$og_summary_widget = bs4Dash::renderInfoBox({
+    infoBox(title = 'Total Designations',
+            value = num_des_per_reg %>%
+              filter(DISTRICT_NAME == click_regdist()) %>%
+              filter(industry_name == 'og_restriction_max') %>%
+              pull(total_designations) %>%
+              scales::number(., big.mark = ','),
+            icon = shiny::icon('droplet'),
+            color = 'danger')
   })
   # Leaflet map to select districts
 
