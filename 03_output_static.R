@@ -10,23 +10,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
+# Load in packages to be used in this script.
 library(tidyverse)
 library(sf)
 library(raster)
 library(RColorBrewer)
 library(envreportutils)
+library(bcmaps)
+library(magick)
 
+# Remove objects in the environment - metaphorically cleaning the top of your desk before working.
 rm(list = ls())
 
-#Double check that a directory called 'out' exists - if not, create it.
+#Double check that directories 'out' and 'land_designations_webapp/www' exists - if not, create them.
 if (!exists("out")) dir.create("out", showWarnings = FALSE)
 if (!exists("land_designations_webapp/www")) dir.create("land_designations_webapp/www", showWarnings = FALSE)
-if (!exists("cons_area_all")) load("tmp/clean.RData")
-if (!exists("ld_with_reg")) load("tmp/ld_with_reg.RData")
+if (!exists("cons_area_all")) load("tmp/clean.RData") # Load in data
+if (!exists("ld_with_reg")) load("tmp/ld_with_reg.RData") #Load in data
+
+#If your local machine does not yet have a simplified version of the natural resource districts, do the following:
 if(!file.exists('tmp/bc_regdists.gpkg')){
 
   #This code doesn't run to completion if you run it from the 'if' on line 26... strange.
-  bc_regs = bcmaps::regional_districts()
+  bc_regs = nr_districts()
 
   bc_regs_small = st_simplify(bc_regs, dTolerance = 2500)
 
@@ -35,199 +41,122 @@ if(!file.exists('tmp/bc_regdists.gpkg')){
 
   rm(bc_regs_small); rm(bc_regs)
 }
+
+#Conversely, if your machine already has these districts as a geopackage, load them in.
 if (!exists('bc_regs')) bc_regs = read_sf('tmp/bc_regdists.gpkg')
 # if (!exists("ld")) load("tmp/raw_data_vect.RData")
 
 
+### Setting or calculating values to be used in the rest of the code.
 
-#Grey colour
+# Grey colour
 my_grey = '#C5C5C5'
-# bc_regs = bcmaps::regional_districts()
+
+# Area of each of the natural resource districts.
 bc_regdists_area = bc_regs %>%
   mutate(regdist_area = as.numeric(st_area(.))) %>%
   st_drop_geometry() %>%
-  dplyr::select(ADMIN_AREA_NAME, regdist_area) %>%
+  dplyr::select(DISTRICT_NAME, regdist_area) %>%
   distinct()
 
-bc_boundary = bcmaps::bc_bound()
-bc_total_surface_area = as.numeric(st_area(bc_boundary %>% summarise()))
+# Download a map of BC using the {bcmaps} package.
+bc_boundary = bc_bound()
 
-#Stacked plot of proportion of BC area for each restriction category and level.
+# Optional: Combine restriction levels 'Full' and 'Protected' into one level.
+mapping_data = ld_with_reg %>%
+  # filter(DISTRICT_NAME == "South Island Natural Resource District") %>%
+  mutate(across(ends_with('_max'), ~ case_when(
+    .x == 0 ~ "None",
+    .x == 1 ~ "Low",
+    .x == 2 ~ "Medium",
+    .x == 3 ~ "High",
+    .x == 4 ~ "Full",
+    .x == 5 ~ "Full"
+  ))) %>%
+  ungroup() %>%
+  mutate(across(ends_with('_max'), ~ replace(.x, .x == "None", NA))) %>%
+  mutate(across(ends_with('_max'), ~ factor(.x,
+                                        levels = c("Full","High","Medium",
+                                                   "Low","None"))))
 
-cons_area_all = cons_area_all %>%
-  mutate(plot_cat = paste0(category," (",r_level,")")) %>%
-  mutate(plot_cat = replace(plot_cat, plot_cat == "NA (NA)", NA)) %>%
-  mutate(plot_cat = factor(plot_cat, levels = c("Parks & Protected Areas (Full)",
-                                                "Other Protected Lands (High)",
-                                                "Resource Exclusion Areas (Medium)",
-                                                "Managed Areas (Low)",
-                                                "Other (Very Low)",
-                                                NA)))
-
-# cons_area_all = cons_area_all %>%
-#   mutate(r_level = factor(r_level, levels = c(NA,"Very Low","Low","Medium","High","Full")))
-
-#Get a vector that organizes the 3 industries in terms of high-to-low area as % of all BC.
-industry_ordering_vec = cons_area_all %>%
-  mutate(max_rest_ind_type = str_to_upper(str_replace_all(max_rest_ind_type,"_"," "))) %>%
-  filter(restriction != 0) %>%
-  group_by(max_rest_ind_type) %>%
-  summarise(total_area = sum(perc_bc_ha)) %>%
-  arrange(desc(total_area)) %>%
-  pull(max_rest_ind_type)
-
-#Industry-specific barplots of proportion of BC area by restriction type.
-forestry_barplot = cons_area_all %>%
-  filter(max_rest_ind_type == "forest_restriction_max") %>%
-  mutate(max_rest_ind_type = str_to_upper(str_replace_all(max_rest_ind_type,"_"," "))) %>%
-  # mutate(max_rest_ind_type = factor(max_rest_ind_type, levels = industry_ordering_vec)) %>%
-  ggplot(aes(x=as.numeric(perc_bc_ha),
-             y= plot_cat,fill=plot_cat)) +
-  geom_col(col='black') +
-  scale_fill_brewer(palette = 'Greens', na.value = my_grey, direction = -1) +
-  guides(fill = guide_legend(reverse = T))+
-  xlab("Proportion of Land Designations by Industry in B.C.") + ylab(NULL) +
-  theme_soe() +
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        axis.text.y = element_blank())
-
-mining_barplot = cons_area_all %>%
-  filter(max_rest_ind_type == "mine_restriction_max") %>%
-  mutate(max_rest_ind_type = str_to_upper(str_replace_all(max_rest_ind_type,"_"," "))) %>%
-  # mutate(max_rest_ind_type = factor(max_rest_ind_type, levels = industry_ordering_vec)) %>%
-  ggplot(aes(x=as.numeric(perc_bc_ha),
-             y= plot_cat,fill=plot_cat)) +
-  geom_col(col='black') +
-  scale_fill_brewer(palette = 'Purples', na.value = my_grey, direction = -1) +
-  guides(fill = guide_legend(reverse = T))+
-  xlab("Proportion of Land Designations by Industry in B.C.") + ylab(NULL) +
-  theme_soe() +
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        axis.text.y = element_blank())
-
-og_barplot = cons_area_all %>%
-  filter(max_rest_ind_type == "og_restriction_max") %>%
-  mutate(max_rest_ind_type = str_to_upper(str_replace_all(max_rest_ind_type,"_"," "))) %>%
-  # mutate(max_rest_ind_type = factor(max_rest_ind_type, levels = industry_ordering_vec)) %>%
-  ggplot(aes(x=as.numeric(perc_bc_ha),
-             y= plot_cat,fill=plot_cat)) +
-  geom_col(col='black') +
-  scale_fill_brewer(palette = 'Oranges', na.value = my_grey, direction = -1) +
-  guides(fill = guide_legend(reverse = T))+
-  xlab("Proportion of Land Designations by Industry in B.C.") + ylab(NULL) +
-  theme_soe() +
-  theme(legend.position="bottom",
-        legend.title=element_blank(),
-        axis.text.y = element_blank())
-
-ggsave('out/forestry_barplot.jpeg',forestry_barplot, width = 6, height = 4)
-ggsave('out/mining_barplot.jpeg',mining_barplot, width = 6, height = 4)
-ggsave('out/og_barplot.jpeg',og_barplot, width = 6, height = 4)
-
-# prop_des = cons_area_all %>%
-#   mutate(max_rest_ind_type = str_to_upper(str_replace_all(max_rest_ind_type,"_"," "))) %>%
-#   mutate(max_rest_ind_type = factor(max_rest_ind_type, levels = industry_ordering_vec)) %>%
-#   # mutate(palette_color = case_when(
-#   #   str_detect(max_rest_ind_type, "FOREST") ~ "Greens",
-#   #   str_detect(max_rest_ind_type, "MINE") ~ "Blues",
-#   #   str_detect(max_rest_ind_type, "OG ") ~ "Oranges"
-#   # )) %>%
-#   ggplot(aes(x=as.numeric(perc_bc_ha),
-#              y= max_rest_ind_type,fill=plot_cat)) +
-#   geom_bar(position="fill", stat="identity",col='black') +
-#   scale_fill_brewer(aes(palette = palette_color), na.value = my_grey, direction = -1) +
-#   guides(fill = guide_legend(reverse = T))+
-#   xlab("Proportion of Land Designations by Industry in B.C.") + ylab(NULL) +
-#   theme_soe() +
-#   theme(legend.position="bottom",
-#         legend.title=element_blank())
-#
-# prop_des
-
-# ggsave('out/prop_des.jpeg', prop_des, width = 7, height = 4, units = 'in')
-
-# Static ggplot maps for each industry type.
-forest_plot = ld_with_reg %>%
-  filter(forest_restriction_max != 0) %>%
-  mutate(forest_restriction_max = as.factor(forest_restriction_max)) %>%
+# Static ggplot maps at provincial scale for each industry type.
+# We use the {magick} package to rescale and crop the ggplot images.
+forest_plot = mapping_data %>%
   ggplot() +
-  geom_sf(data = bc_boundary, fill = 'grey', color = 'transparent') +
+  geom_sf(data = bc_boundary, fill = 'transparent', color = 'black') +
   geom_sf(aes(fill = forest_restriction_max),
           col = 'transparent') +
-  # geom_sf(data = bc_regs, fill = 'transparent') +
-  scale_fill_brewer(palette = 'Greens') +
+  scale_fill_brewer(palette = 'Greens', direction = -1, na.value = 'white') +
   theme_minimal() +
   theme(legend.position = 'none',
         panel.grid = element_blank(),
         axis.text = element_blank())
 
 ggsave('out/forest_restriction_plot.jpeg',forest_plot, width = 6, height = 8, units = 'in')
-magick::image_read('out/forest_restriction_plot.jpeg') %>%
+image_read('out/forest_restriction_plot.jpeg') %>%
   image_scale('x1000') %>%
   image_crop('700x600+45+200') %>%
   image_write('out/forest_restriction_plot.jpeg')
 
-mine_plot = ld_with_reg %>%
-  filter(mine_restriction_max != 0) %>%
-  mutate(mine_restriction_max = as.factor(mine_restriction_max)) %>%
+mine_plot = mapping_data %>%
   ggplot() +
-  geom_sf(data = bc_boundary, fill = 'grey', color = 'transparent') +
+  geom_sf(data = bc_boundary, fill = 'transparent', color = 'black') +
   geom_sf(aes(fill = mine_restriction_max),
           col = 'transparent') +
-  # geom_sf(data = bc_regs, fill = 'transparent') +
-  scale_fill_brewer(palette = 'Purples') +
+  scale_fill_brewer(palette = 'Purples', direction = -1, na.value = 'white') +
   theme_minimal() +
   theme(legend.position = 'none',
         panel.grid = element_blank(),
         axis.text = element_blank())
 
 ggsave('out/mine_restriction_plot.jpeg',mine_plot, width = 6, height = 8, units = 'in')
-magick::image_read('out/mine_restriction_plot.jpeg') %>%
+
+image_read('out/mine_restriction_plot.jpeg') %>%
   image_scale('x1000') %>%
   image_crop('700x600+45+200') %>%
   image_write('out/mine_restriction_plot.jpeg')
 
-og_plot = ld_with_reg %>%
-  filter(og_restriction_max != 0) %>%
-  mutate(og_restriction_max = as.factor(og_restriction_max)) %>%
+og_plot = mapping_data %>%
   ggplot() +
-  geom_sf(data = bc_boundary, fill = 'grey', color = 'transparent') +
+  geom_sf(data = bc_boundary, fill = 'transparent', color = 'black') +
   geom_sf(aes(fill = og_restriction_max),
           col = 'transparent') +
-  # geom_sf(data = bc_regs, fill = 'transparent') +
-  scale_fill_brewer(palette = 'Oranges') +
+  scale_fill_brewer(palette = 'Oranges', direction = -1, na.value = 'white') +
   theme_minimal() +
   theme(legend.position = 'none',
         panel.grid = element_blank(),
         axis.text = element_blank())
 
 ggsave('out/og_restriction_plot.jpeg',og_plot, width = 6, height = 8, units = 'in')
-magick::image_read('out/og_restriction_plot.jpeg') %>%
+
+image_read('out/og_restriction_plot.jpeg') %>%
   image_scale('x1000') %>%
   image_crop('700x600+45+200') %>%
   image_write('out/og_restriction_plot.jpeg')
 
-# Copy the provincial-scale JPEGs (n=6) we just made to the R Shiny www/ folder.
+### Copy the provincial-scale JPEGs (n=3) we just made to the R Shiny www/ folder.
+
+# First, delete any old versions of these jpegs that we have in that folder...
+file.remove(list.files(path = 'land_designations_webapp_3col/www/',
+                       pattern = '_plot\\.jpeg',full.names = T))
+
 list.files(path = 'out/', pattern = "[^des]\\.jpeg") %>%
   map( ~ {
-    file.copy(from = paste0('out/',.x),to = paste0('land_designations_webapp/www/',.x))
+    file.copy(from = paste0('out/',.x),to = paste0('land_designations_webapp_3col/www/',.x))
   })
 
-# Summarise data for each industry type, regional district, and restriction level.
+# Summarise total area by industry type, natural resource district, and restriction level.
 area_by_regdist_and_industry_and_restriction_value = ld_with_reg %>%
   mutate(area = as.numeric(st_area(.))) %>%
   st_drop_geometry() %>%
   pivot_longer(cols = c("forest_restriction_max","mine_restriction_max","og_restriction_max"),
                names_to = 'industry_name',
                values_to = 'max_restriction_value') %>%
-  group_by(industry_name, ADMIN_AREA_NAME, max_restriction_value) %>%
-  summarise(area = sum(area, na.rm=T),
-            .groups = 'drop') %>%
-  left_join(bc_regdists_area) %>%
-  rename(zone_area = regdist_area) %>%
-  mutate(proportional_area = area/zone_area) %>%
+  group_by(industry_name, DISTRICT_NAME, max_restriction_value) %>%
+  summarise(area = sum(area, na.rm=T)) %>%
+  group_by(industry_name,DISTRICT_NAME) %>%
+  mutate(total_district_area = sum(area,na.rm=T)) %>%
+  mutate(proportional_area = area/total_district_area) %>%
   ungroup()
 
 # Add 3 rows - one for each industry at the scale of the entire province
@@ -235,10 +164,12 @@ bc_reg_dat = area_by_regdist_and_industry_and_restriction_value %>%
   bind_rows(
     area_by_regdist_and_industry_and_restriction_value %>%
       group_by(industry_name, max_restriction_value) %>%
-      summarise(area = sum(area,na.rm=T),
-                zone_area = sum(zone_area,na.rm=T),
-                proportional_area = area / zone_area) %>%
-      mutate(ADMIN_AREA_NAME = "Provincial")
+      summarise(area = sum(area,na.rm=T)) %>%
+      group_by(industry_name) %>%
+      mutate(bc_area = sum(area)) %>%
+      ungroup() %>%
+      mutate(proportional_area = area/bc_area) %>%
+      mutate(DISTRICT_NAME = "Provincial")
   ) %>%
   #Rename restriction levels from numeric levels to character labels.
   mutate(max_restriction_value = case_when(
@@ -251,40 +182,60 @@ bc_reg_dat = area_by_regdist_and_industry_and_restriction_value %>%
   )) %>%
   #Optional: collapse categories 4 and 5 into one single category called "Full Restriction"
     mutate(max_restriction_value = replace(max_restriction_value, max_restriction_value == "Protected", "Full")) %>%
-    group_by(industry_name,max_restriction_value,ADMIN_AREA_NAME) %>%
+    group_by(industry_name,max_restriction_value,DISTRICT_NAME) %>%
   summarise(proportional_area = sum(proportional_area,na.rm=T)) %>%
   ungroup() %>%
   mutate(max_restriction_value = factor(max_restriction_value,
                                         levels = c("Full","High","Medium",
                                                    "Low","None")))
 
+# Write these summary data to the shiny app's /www folder.
 write.csv(bc_reg_dat,'land_designations_webapp_3col/www/bc_reg_dat.csv',
           row.names = F)
 
-# For each industry and regional district, make a high-resolution map piece.
+# Calculate the number of designations per district.
+num_des_per_reg = ld_with_reg %>%
+  st_drop_geometry() %>%
+  filter(!duplicated(designations_planarized_id)) %>%
+  count(DISTRICT_NAME, name = 'number_designations')
+
+write.csv(num_des_per_reg, 'land_designations_webapp_3col/www/number_designations_per_district.csv', row.names = F)
+
+
+# # #  JPEGs for each Natural Resource district
+# Clear out images currently in tmp/regdist_figs, tmp/regdist_svgs, and
+# land_designations_webapp_3col/www/regdist_figs
+
+file.remove(list.files(path = './tmp/regdist_figs/',full.names = T))
+file.remove(list.files(path = './tmp/regdist_svgs/',full.names = T))
+file.remove(list.files(path = './land_designations_webapp_3col/www/regdist_figs/',full.names = T))
+
+# For each industry and district, make a high-resolution map piece.
 for(industry in c("forest_restriction_max","mine_restriction_max","og_restriction_max")){
-  for(region_name in c(unique(bc_regs$ADMIN_AREA_NAME),NA)){
+  for(district_name in unique(bc_regs$DISTRICT_NAME)){
 
-    print(paste0("Working on: ",industry, " - ",region_name))
+    print(paste0("Working on: ",industry, " - ",district_name))
 
-    the_region = bc_regs %>% filter(ADMIN_AREA_NAME %in% region_name)
+    the_district = bc_regs %>% filter(DISTRICT_NAME %in% district_name)
 
-    choro_dat = ld_with_reg %>%
+    district_dat = ld_with_reg %>%
       pivot_longer(cols = c("forest_restriction_max","mine_restriction_max","og_restriction_max"),
                    names_to = 'industry_name',
                    values_to = 'max_restriction_value') %>%
       filter(industry_name == industry) %>%
-      filter(ADMIN_AREA_NAME == region_name) %>%
+      filter(DISTRICT_NAME == district_name) %>%
       filter(max_restriction_value != 0) %>%
       mutate(max_restriction_value = as.factor(max_restriction_value))
+
+    #Trim edges using the district polygon.
+    district_dat = sf::st_intersection(district_dat, the_district)
 
     g = ggplot() +
       geom_sf(aes(fill = max_restriction_value),
               col = 'transparent',
-              data = choro_dat) +
-      geom_sf(data = the_region, col = 'black', fill = 'transparent') +
+              data = district_dat) +
+      geom_sf(data = the_district, col = 'black', fill = 'transparent') +
       ggspatial::annotation_scale() +
-      labs(title = region_name) +
       theme_minimal() +
       theme(legend.position = 'none',
             panel.grid = element_blank(),
@@ -297,10 +248,10 @@ for(industry in c("forest_restriction_max","mine_restriction_max","og_restrictio
       g = g + scale_fill_brewer(palette = 'Oranges')
     }
 
-    ggsave(filename = paste0('tmp/regdist_figs/',industry,"_",region_name,".jpeg"),
-           plot = g, width = 4, height = 4, dpi = 150)
-    file.copy(from = paste0('tmp/regdist_figs/',industry,"_",region_name,".jpeg"),
-              to = paste0('land_designations_webapp/www/regdist_figs/',industry,"_",region_name,".jpeg"))
+    ggsave(filename = paste0('tmp/regdist_figs/',industry,"_",district_name,".jpeg"),
+           plot = g, width = 4, height = 4, dpi = 200)
+    file.copy(from = paste0('tmp/regdist_figs/',industry,"_",district_name,".jpeg"),
+              to = paste0('land_designations_webapp_3col/www/regdist_figs/',industry,"_",district_name,".jpeg"))
   }
 }
 

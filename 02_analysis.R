@@ -30,7 +30,8 @@ if(!dir.exists('out-shiny'))dir.create("out-shiny", showWarnings = FALSE)
 # my_dTolerance = 1500
 
 # Assign a regional district name to each polygon of land designation gpkg.
-bc_reg = bcmaps::regional_districts() %>% dplyr::select(ADMIN_AREA_NAME)
+# bc_reg = bcmaps::regional_districts() %>% dplyr::select(DISTRICT_NAME)
+bc_reg = bcmaps::nr_districts() %>% dplyr::select(DISTRICT_NAME)
 
 ld_with_reg = ld %>%
   st_join(bc_reg, st_intersects)
@@ -64,7 +65,7 @@ ld_regdist_sum = ld_with_reg %>%
   mutate(individual_area = st_area(.)) %>%
   st_drop_geometry() %>%
   #Sum together the
-  group_by(max_rest_ind_type, max_rest_ind_value,ADMIN_AREA_NAME) %>%
+  group_by(max_rest_ind_type, max_rest_ind_value,DISTRICT_NAME) %>%
   summarise(area_by_rest_type_and_level_ha = round(sum(individual_area, na.rm=T) / 10000, digits = 2),
             parcels_in_rest_type_and_level = n()) %>%
   #Calculate percentage of BC surface area in hectares for each type / level.
