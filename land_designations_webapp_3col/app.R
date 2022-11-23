@@ -58,7 +58,7 @@ regdist_barplot = function(dat, industry = NULL, reactive_height = NULL, number_
   ggplotly(g,
            tooltip = 'label',
            # height = '100%') %>%
-           height = 1.50*as.numeric(str_extract(reactive_height, '[0-9]*'))) %>%
+           height = 1.40*as.numeric(str_extract(reactive_height, '[0-9]*'))) %>%
     config(displayModeBar = F)
 
 }
@@ -115,9 +115,7 @@ boxes_body_long = bs4DashBody(width = 5,
                                            crosstalk::bscols(
                                              list(
                                                uiOutput('jpeg_fig_forest'),
-                                               plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width),
-                                               div(infoBoxOutput('forest_summary_widget', width = my_box_content_width),
-                                                   style = 'margin-left:10%;margin-top:15%;width:fit-content;')
+                                               plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width)
                                              )
                                            ),
                                            style = '{box-sizing:content-box}',
@@ -133,9 +131,7 @@ boxes_body_long = bs4DashBody(width = 5,
                                          crosstalk::bscols(
                                            list(
                                              uiOutput('jpeg_fig_mine'),
-                                             plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width),
-                                             div(infoBoxOutput('mine_summary_widget', width = my_box_content_width),
-                                                 style = 'margin-left:40%;margin-top:15%;width:fit-content;align:center;')
+                                             plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width)
                                            )
                                          )
                                      )
@@ -149,9 +145,7 @@ boxes_body_long = bs4DashBody(width = 5,
                                          crosstalk::bscols(
                                            list(
                                              uiOutput('jpeg_fig_og'),
-                                             plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width),
-                                             div(infoBoxOutput('og_summary_widget', width = my_box_content_width),
-                                                 style = 'margin-left:10%;margin-top:15%;width:fit-content;')
+                                             plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width)
                                            )
                                          )
                                      )
@@ -212,6 +206,7 @@ server <- function(input, output, session) {
                                                          pattern = '^forest.*')) %>%
     mutate(image_path = str_remove(image_path, '^forest_')) %>%
     mutate(regdist = str_extract(image_path, "(?<=max_).*(?=\\.jpeg)")) %>%
+    #Add 3 rows to table, one for each provincial-scale jpeg.
     bind_rows(
       data.frame(
         image_path = "restriction_plot.jpeg",
@@ -237,11 +232,11 @@ server <- function(input, output, session) {
   manual_sidebar_tracker = reactiveVal(value = 'open')
 
   # Figure dimensions, determined in part by whether or not the sidebar is collapsed.
-  figureHeight = reactive({
-    if(input$leaflet_sidebar){
-      my_row_height_minimized
-    } else {my_row_height_maximized}
-  })
+  # figureHeight = reactive({
+  #   if(input$leaflet_sidebar){
+  #     my_row_height_minimized
+  #   } else {my_row_height_maximized}
+  # })
 
   # Reactive number of x-axis ticks and labels.
   numberTicks = reactive({
@@ -259,40 +254,7 @@ server <- function(input, output, session) {
     cat("input$leaflet_sidebar: ", input$leaflet_sidebar,"\n")
   })
 
-  # Summary widgets for the number of designations per industry and area.
-  output$forest_summary_widget = bs4Dash::renderInfoBox({
-    infoBox(title = HTML('Total <br>Designations'),
-            value = num_des_per_reg %>%
-              filter(DISTRICT_NAME == click_regdist()) %>%
-              filter(industry_name == 'forest_restriction_max') %>%
-              pull(total_designations) %>%
-              scales::number(., big.mark = ','),
-            icon = shiny::icon('tree'),
-            color = 'success')
-  })
-
-  output$mine_summary_widget = bs4Dash::renderInfoBox({
-    infoBox(title =  HTML('Total <br>Designations'),
-            value = num_des_per_reg %>%
-              filter(DISTRICT_NAME == click_regdist()) %>%
-              filter(industry_name == 'mine_restriction_max') %>%
-              pull(total_designations) %>%
-              scales::number(., big.mark = ','),
-            icon = shiny::icon('mountain'),
-            color = 'info')
-  })
-
-  output$og_summary_widget = bs4Dash::renderInfoBox({
-    infoBox(title =  HTML('Total <br>Designations'),
-            value = num_des_per_reg %>%
-              filter(DISTRICT_NAME == click_regdist()) %>%
-              filter(industry_name == 'og_restriction_max') %>%
-              pull(total_designations) %>%
-              scales::number(., big.mark = ','),
-            icon = shiny::icon('droplet'),
-            color = 'danger')
-  })
-  # Leaflet map to select districts
+   # Leaflet map to select districts
 
   output$sel_reg_map <- renderLeaflet({
 
@@ -313,6 +275,7 @@ server <- function(input, output, session) {
           style = list("font-weight" = "normal", padding = "4px 8px"),
           textsize = "15px",
           direction = 'auto')) %>%
+      leaflet.extras::addResetMapButton()
       envreportutils::add_bc_home_button() %>%
       envreportutils::set_bc_view()
 
@@ -397,17 +360,15 @@ server <- function(input, output, session) {
 
     regdist_barplot(bc_reg_dat_selected(),
                     industry = 'forest_restriction_max',
-                    reactive_height = figureHeight(),
+                    reactive_height = my_row_height_minimized,
                     number_ticks = numberTicks())
-    # )
-    # reactive_height = figureHeight())
   })
 
   output$barplot_mine = renderPlotly({
 
     regdist_barplot(bc_reg_dat_selected(),
                     industry = 'mine_restriction_max',
-                    reactive_height = figureHeight(),
+                    reactive_height = my_row_height_minimized,
                     number_ticks = numberTicks())
   })
 
@@ -415,7 +376,7 @@ server <- function(input, output, session) {
 
     regdist_barplot(bc_reg_dat_selected(),
                     industry = 'og_restriction_max',
-                    reactive_height = figureHeight(),
+                    reactive_height = my_row_height_minimized,
                     number_ticks = numberTicks())
   })
 }
