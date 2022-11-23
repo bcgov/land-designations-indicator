@@ -14,7 +14,7 @@ rm(list = ls())
 
 # Plotting function
 
-regdist_barplot = function(dat, industry = NULL, reactive_height = NULL){
+regdist_barplot = function(dat, industry = NULL, reactive_height = NULL, number_ticks = 4){
 
   mapping_dat = dat %>%
     filter(industry_name == industry) %>%
@@ -29,7 +29,7 @@ regdist_barplot = function(dat, industry = NULL, reactive_height = NULL){
              size = 1/5) +
     coord_flip() +
     scale_y_continuous(labels = scales::label_percent(),
-                       breaks = scales::breaks_pretty(4)) +
+                       breaks = scales::breaks_pretty(n = number_ticks)) +
     labs(x = "Restriction Level",
          y = "Percent of <br>Area") +
     theme_bw() +
@@ -57,6 +57,7 @@ regdist_barplot = function(dat, industry = NULL, reactive_height = NULL){
 
   ggplotly(g,
            tooltip = 'label',
+           # height = '100%') %>%
            height = 1.50*as.numeric(str_extract(reactive_height, '[0-9]*'))) %>%
     config(displayModeBar = F)
 
@@ -94,6 +95,12 @@ reset_focus_button = div(
 boxes_body_long = bs4DashBody(width = 5,
                               style = 'div.col-sm-6 {padding:1px}',
                               useShinyjs(),
+                              # This script allows us to manually change the input value
+                              # that tracks whether the sidebar is open or closed. Useful!
+                              tags$script("
+    Shiny.addCustomMessageHandler('leaflet_sidebar', function(value) {
+    Shiny.setInputValue('leaflet_sidebar', value);
+    });"),
                               div(textOutput('region_selected_text'),
                                   style = 'text-align:center;font-size:26px;font-family:bold;padding:10px;'),
                               #3 rows, one per industry, with regional jpeg on left, barplot on right.
@@ -101,15 +108,19 @@ boxes_body_long = bs4DashBody(width = 5,
                                      box(width = 12,
                                          title = "Forestry Restrictions",
                                          status = 'success',
+                                         style = '.crosstalk-bscols {box-sizing:content-box}',
                                          maximizable = F,
                                          collapsible = F,
-                                         crosstalk::bscols(
-                                           list(
-                                             uiOutput('jpeg_fig_forest'),
-                                             plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width),
-                                            div(infoBoxOutput('forest_summary_widget', width = my_box_content_width),
-                                                style = 'margin-left:10%;margin-top:15%')
-                                           )
+                                         div(
+                                           crosstalk::bscols(
+                                             list(
+                                               uiOutput('jpeg_fig_forest'),
+                                               plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width),
+                                               div(infoBoxOutput('forest_summary_widget', width = my_box_content_width),
+                                                   style = 'margin-left:10%;margin-top:15%;width:fit-content;')
+                                             )
+                                           ),
+                                           style = '{box-sizing:content-box}',
                                          )
                                      )
                               ),
@@ -124,7 +135,7 @@ boxes_body_long = bs4DashBody(width = 5,
                                              uiOutput('jpeg_fig_mine'),
                                              plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width),
                                              div(infoBoxOutput('mine_summary_widget', width = my_box_content_width),
-                                                 style = 'margin-left:10%;margin-top:15%')
+                                                 style = 'margin-left:40%;margin-top:15%;width:fit-content;align:center;')
                                            )
                                          )
                                      )
@@ -134,12 +145,13 @@ boxes_body_long = bs4DashBody(width = 5,
                                          title = "Oil/Gas Restrictions",
                                          status = 'danger',
                                          maximizable = F,
+                                         collapsible = F,
                                          crosstalk::bscols(
                                            list(
                                              uiOutput('jpeg_fig_og'),
                                              plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width),
                                              div(infoBoxOutput('og_summary_widget', width = my_box_content_width),
-                                                 style = 'margin-left:10%;margin-top:15%')
+                                                 style = 'margin-left:10%;margin-top:15%;width:fit-content;')
                                            )
                                          )
                                      )
@@ -188,7 +200,7 @@ ui <- bs4Dash::bs4DashPage(
   title = NULL
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
 
   ### Static objects and values
 
@@ -220,6 +232,10 @@ server <- function(input, output) {
 
   ### Reactive entities
 
+  # Status of the sidebar. This is a workaround, as we are not able to directly
+  # set the input$leaflet_sidebar. So, this reactive entity will keep track for us.
+  manual_sidebar_tracker = reactiveVal(value = 'open')
+
   # Figure dimensions, determined in part by whether or not the sidebar is collapsed.
   figureHeight = reactive({
     if(input$leaflet_sidebar){
@@ -227,15 +243,25 @@ server <- function(input, output) {
     } else {my_row_height_maximized}
   })
 
-  figureWidth = reactive({
+  # Reactive number of x-axis ticks and labels.
+  numberTicks = reactive({
     if(input$leaflet_sidebar){
-      my_row_width_minimized
-    } else {my_row_width_maximized}
+      2
+    }
+    else {
+      4
+    }
+  })
+
+  observeEvent(input$leaflet_sidebar,{
+    list_of_inputs <<- reactiveValuesToList(input)
+    print(list_of_inputs)
+    cat("input$leaflet_sidebar: ", input$leaflet_sidebar,"\n")
   })
 
   # Summary widgets for the number of designations per industry and area.
   output$forest_summary_widget = bs4Dash::renderInfoBox({
-    infoBox(title = 'Total Designations',
+    infoBox(title = HTML('Total <br>Designations'),
             value = num_des_per_reg %>%
               filter(DISTRICT_NAME == click_regdist()) %>%
               filter(industry_name == 'forest_restriction_max') %>%
@@ -246,7 +272,7 @@ server <- function(input, output) {
   })
 
   output$mine_summary_widget = bs4Dash::renderInfoBox({
-    infoBox(title = 'Total Designations',
+    infoBox(title =  HTML('Total <br>Designations'),
             value = num_des_per_reg %>%
               filter(DISTRICT_NAME == click_regdist()) %>%
               filter(industry_name == 'mine_restriction_max') %>%
@@ -257,7 +283,7 @@ server <- function(input, output) {
   })
 
   output$og_summary_widget = bs4Dash::renderInfoBox({
-    infoBox(title = 'Total Designations',
+    infoBox(title =  HTML('Total <br>Designations'),
             value = num_des_per_reg %>%
               filter(DISTRICT_NAME == click_regdist()) %>%
               filter(industry_name == 'og_restriction_max') %>%
@@ -298,8 +324,10 @@ server <- function(input, output) {
   observeEvent(input$sel_reg_map_shape_click, {
     # Capture the info of the clicked polygon. We use this for filtering.
     click_regdist(input$sel_reg_map_shape_click$id)
-    # Toggle the sidebar to be closed.
+    # Toggle the sidebar to be closed. Note: this skips the actual input$leaflet_sidebar variable.
     addClass(selector = "body", class = "sidebar-collapse")
+    session$sendCustomMessage("leaflet_sidebar", 'FALSE')
+    manual_sidebar_tracker('closed')
   })
 
   # If user clicks on 'reset to province' button, reset the selection to 'Provincial'
@@ -369,21 +397,26 @@ server <- function(input, output) {
 
     regdist_barplot(bc_reg_dat_selected(),
                     industry = 'forest_restriction_max',
-                    reactive_height = figureHeight())
+                    reactive_height = figureHeight(),
+                    number_ticks = numberTicks())
+    # )
+    # reactive_height = figureHeight())
   })
 
   output$barplot_mine = renderPlotly({
 
     regdist_barplot(bc_reg_dat_selected(),
                     industry = 'mine_restriction_max',
-                    reactive_height = figureHeight())
+                    reactive_height = figureHeight(),
+                    number_ticks = numberTicks())
   })
 
   output$barplot_og = renderPlotly({
 
     regdist_barplot(bc_reg_dat_selected(),
                     industry = 'og_restriction_max',
-                    reactive_height = figureHeight())
+                    reactive_height = figureHeight(),
+                    number_ticks = numberTicks())
   })
 }
 
