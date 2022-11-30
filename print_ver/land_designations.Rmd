@@ -231,18 +231,17 @@ for(industry in unique(bc_reg_dat$industry_name)){
     cat("## Maps of Forestry Restriction Land Designations (2022)\n")
   }
   if(industry == 'mine_restriction_max'){
+    cat("\n")
     cat("## Maps of Mining Restriction Land Designations (2022)\n")
   }
   if(industry == 'og_restriction_max'){
-    cat("## Maps of Oil and Gas Restriction Land Designations (2022)\n")
+    cat("\\newpage\n")
+    cat("\n## Maps of Oil and Gas Restriction Land Designations (2022)\n")
   }
   
   for(region_name in my_names) {
     
     cat("\\newpage\n")
-    #cat(paste0("### ",region_name,"\n"))
-    #cat("\n")
-    #cat("")
     
     # Make industry label.
     if(industry == 'forest_restriction_max'){
@@ -273,7 +272,6 @@ for(industry in unique(bc_reg_dat$industry_name)){
     print(my_jpeg / my_barplot + plot_layout(widths = 1)) 
     cat("\n")
     
-    #cat("\\newpage")
   }
 }
 ```
