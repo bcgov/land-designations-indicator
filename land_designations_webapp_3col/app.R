@@ -12,6 +12,18 @@ library(shinyjs)
 
 rm(list = ls())
 
+### Static layout settings ###
+
+# Row width and height
+my_row_width_minimized = '235px'
+my_row_width_maximized = '300px'
+my_row_height_minimized = paste0((6/7)*as.numeric(str_remove(my_row_width_minimized,'px')),"px")
+my_row_height_maximized = paste0((6/7)*as.numeric(str_remove(my_row_width_maximized,'px')),"px")
+
+# Sidebar width
+my_sidebar_width = '35%'
+my_box_content_width = '115%'
+
 # Plotting function
 
 regdist_barplot = function(dat, industry = NULL, reactive_height = NULL, number_ticks = 4){
@@ -60,25 +72,8 @@ regdist_barplot = function(dat, industry = NULL, reactive_height = NULL, number_
            # height = '100%') %>%
            height = 1.40*as.numeric(str_extract(reactive_height, '[0-9]*'))) %>%
     config(displayModeBar = F)
-
 }
-# ### Box dimensions
-# # Tailored to 'wide' layout
-# my_row_width_minimized = '350px'
-# my_row_width_maximized = '550px'
-# my_row_height_minimized = '300px'
-# my_row_height_maximized = '500px'
 
-
-# Tailored to 'long' layout
-my_row_width_minimized = '235px'
-my_row_width_maximized = '300px'
-my_row_height_minimized = paste0((6/7)*as.numeric(str_remove(my_row_width_minimized,'px')),"px")
-my_row_height_maximized = paste0((6/7)*as.numeric(str_remove(my_row_width_maximized,'px')),"px")
-
-# Sidebar width
-my_sidebar_width = '30%'
-my_box_content_width = '115%'
 
 # Buttons and inputs
 reset_focus_button = div(
@@ -275,9 +270,9 @@ server <- function(input, output, session) {
           style = list("font-weight" = "normal", padding = "4px 8px"),
           textsize = "15px",
           direction = 'auto')) %>%
-      leaflet.extras::addResetMapButton()
+      leaflet.extras::addResetMapButton() %>%
       envreportutils::add_bc_home_button() %>%
-      envreportutils::set_bc_view()
+      envreportutils::set_bc_view(zoom = 4.5)
 
   })
 
