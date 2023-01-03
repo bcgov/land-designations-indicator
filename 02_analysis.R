@@ -37,6 +37,25 @@ ld_with_reg = ld %>%
   st_join(bc_reg, st_intersects)
 #Started at 2:10 PM earliest... finished ~ 2:35 PM
 
+# Calculate the area of each designation, grouped by district. Only keep the largest 50 designations for each district-restriction type-restriction number combination.
+ld_areas_with_reg = ld_with_reg %>%
+  #Pivot table longer, combining into one column the 3 industries' max restrictions.
+  pivot_longer(cols = c(ends_with('_max')), names_to = 'max_rest_ind_type', values_to = 'max_rest_ind_value') %>%
+  #Remove rows with 'max_rest_ind_value' equal to 0 (i.e. there was no such restriction for that parcel of land)
+  filter(max_rest_ind_value != 0) %>%
+  #Calculate the area of each individual parcel. We'll sum these later.
+  mutate(individual_area = st_area(.)) %>%
+  st_drop_geometry() %>%
+  dplyr::select(DISTRICT_NAME,designations_planarized_id,
+                max_rest_ind_type,max_rest_ind_value,
+                individual_area) %>%
+  distinct() %>%
+  group_by(DISTRICT_NAME,max_rest_ind_type,max_rest_ind_value) %>%
+  arrange(desc(individual_area)) %>%
+  slice(1:10)
+
+write_csv(ld_areas_with_reg, "land_designations_webapp_3col/land_designations_area_with_district.csv")
+
 #Find area/proportion for each restriction level/type
 
 ld_sum = ld_with_reg %>%
