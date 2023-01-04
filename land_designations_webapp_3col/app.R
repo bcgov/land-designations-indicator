@@ -86,9 +86,76 @@ reset_focus_button = div(
 
 ## Body design:
 
-# Boxes from {bs4Dash} (hotdog style)
+# Three vertical boxes that each display one of the industry types' static map and plotly barchart.
+three_vertical_boxes = fluidRow(
+  column(width = 4,
+         box(width = 12,
+             title = "Forestry Restrictions",
+             status = 'success',
+             style = '.crosstalk-bscols {box-sizing:content-box}',
+             maximizable = F,
+             collapsible = F,
+             div(
+               crosstalk::bscols(
+                 list(
+                   uiOutput('jpeg_fig_forest'),
+                   plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width)
+                 )
+               ),
+               style = '{box-sizing:content-box}',
+             )
+         )
+  ),
+  column(width = 4,
+         box(width = 12,
+             title = 'Mining Restrictions',
+             status = 'info',
+             maximizable = F,
+             collapsible = F,
+             crosstalk::bscols(
+               list(
+                 uiOutput('jpeg_fig_mine'),
+                 plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width)
+               )
+             )
+         )
+  ),
+  column(width = 4,
+         box(width = 12,
+             title = "Oil/Gas Restrictions",
+             status = 'danger',
+             maximizable = F,
+             collapsible = F,
+             crosstalk::bscols(
+               list(
+                 uiOutput('jpeg_fig_og'),
+                 plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width)
+               )
+             )
+         )
+  )
+)
+
+# Table of specific designation areas
+
+designation_table = box(width = 12,
+                        title = "Largest Designations by Industry",
+                        maximizable = F,
+                        collapsible = T,
+                        collapsed = T,
+                        dataTableOutput('desig_table')
+)
+
+# Body of app using {bs4Dash} (hotdog style)
 boxes_body_long = bs4DashBody(width = 5,
-                              style = 'div.col-sm-6 {padding:1px}',
+                              tags$head(tags$style('.div.col-sm-6 {padding:1px}
+                                                    .tfoot {display: table-header-group}
+                                                    .thead {display: table-row-group}
+                                                    .form-inline {justify-content:space-evenly;}')),
+                              # style = '.div.col-sm-6 {padding:1px}
+                              #          .form-inline {justify-content:space-evenly;}',
+                              # style = '.tfoot {display: table-header-group}
+                              #          .thead {display: table-row-group}',
                               useShinyjs(),
                               # This script allows us to manually change the input value
                               # that tracks whether the sidebar is open or closed. Useful!
@@ -99,52 +166,8 @@ boxes_body_long = bs4DashBody(width = 5,
                               div(textOutput('region_selected_text'),
                                   style = 'text-align:center;font-size:26px;font-family:bold;padding:10px;'),
                               #3 rows, one per industry, with regional jpeg on left, barplot on right.
-                              column(width = 4,
-                                     box(width = 12,
-                                         title = "Forestry Restrictions",
-                                         status = 'success',
-                                         style = '.crosstalk-bscols {box-sizing:content-box}',
-                                         maximizable = F,
-                                         collapsible = F,
-                                         div(
-                                           crosstalk::bscols(
-                                             list(
-                                               uiOutput('jpeg_fig_forest'),
-                                               plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width)
-                                             )
-                                           ),
-                                           style = '{box-sizing:content-box}',
-                                         )
-                                     )
-                              ),
-                              column(width = 4,
-                                     box(width = 12,
-                                         title = 'Mining Restrictions',
-                                         status = 'info',
-                                         maximizable = F,
-                                         collapsible = F,
-                                         crosstalk::bscols(
-                                           list(
-                                             uiOutput('jpeg_fig_mine'),
-                                             plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width)
-                                           )
-                                         )
-                                     )
-                              ),
-                              column(width = 4,
-                                     box(width = 12,
-                                         title = "Oil/Gas Restrictions",
-                                         status = 'danger',
-                                         maximizable = F,
-                                         collapsible = F,
-                                         crosstalk::bscols(
-                                           list(
-                                             uiOutput('jpeg_fig_og'),
-                                             plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width)
-                                           )
-                                         )
-                                     )
-                              )
+                              three_vertical_boxes,
+                              designation_table
 )
 
 my_theme = create_theme(
@@ -195,6 +218,35 @@ server <- function(input, output, session) {
 
   # Number of unique designations per region.
   num_des_per_reg = read_csv('www/number_designations_per_district.csv')
+
+  # Area of largest 10 designations for each natural resource district-restriction type-restriction level combination.
+  area_per_des = read_csv('www/land_designations_area_with_district.csv') %>%
+    mutate(individual_area = individual_area/1000000) %>%
+    mutate(max_rest_ind_type = case_when(
+      max_rest_ind_type == 'forest_restriction_max' ~ "Forestry Restrictions",
+      max_rest_ind_type == 'mine_restriction_max' ~ "Mining Restrictions",
+      max_rest_ind_type == 'og_restriction_max' ~ "Oil/Gas Restrictions"
+    )) %>%
+    #Remove designations that matched with a nameless district (mysterious...)
+    filter(!is.na(DISTRICT_NAME)) %>%
+    #Temporary?: drop the restriction level field, and only keep top 10 largest by restriction type and district name.
+    group_by(DISTRICT_NAME,max_rest_ind_type) %>%
+    arrange(desc(individual_area)) %>%
+    slice(1:10) %>%
+    dplyr::select(-max_rest_ind_value) %>%
+    mutate(is_restricted = is.numeric(individual_area)) %>%
+    mutate(is_restricted = replace(is_restricted,
+                                  T,
+                                  "Yes")) %>%
+    pivot_wider(names_from = max_rest_ind_type,
+                values_from = is_restricted,
+                values_fill = 'No') %>%
+    dplyr::rename(`District Name` = DISTRICT_NAME,
+                  `Designation ID` = designations_planarized_id,
+                  # `Restriction Type` = max_rest_ind_type,
+                  `Area (km²)` = individual_area) %>%
+    ungroup()
+                  # `Restriction Level` = max_rest_ind_value,
 
   # Dataframe of file paths to provincial and district images.
   jpeg_filepaths_df = data.frame(image_path = list.files(path = 'www/regdist_figs',
@@ -249,7 +301,7 @@ server <- function(input, output, session) {
     cat("input$leaflet_sidebar: ", input$leaflet_sidebar,"\n")
   })
 
-   # Leaflet map to select districts
+  # Leaflet map to select districts
 
   output$sel_reg_map <- renderLeaflet({
 
@@ -270,15 +322,17 @@ server <- function(input, output, session) {
           style = list("font-weight" = "normal", padding = "4px 8px"),
           textsize = "15px",
           direction = 'auto')) %>%
-      leaflet.extras::addResetMapButton() %>%
       envreportutils::add_bc_home_button() %>%
-      envreportutils::set_bc_view(zoom = 4.5)
+      envreportutils::set_bc_view(zoom = 5)
 
   })
 
+  # Set up a reactive value that stores a district upon user's click
   click_regdist <- reactiveVal('Provincial')
 
   # Watch for a click on the leaflet map. Once clicked...
+
+  # 1. Update Leaflet map.
   observeEvent(input$sel_reg_map_shape_click, {
     # Capture the info of the clicked polygon. We use this for filtering.
     click_regdist(input$sel_reg_map_shape_click$id)
@@ -287,6 +341,30 @@ server <- function(input, output, session) {
     session$sendCustomMessage("leaflet_sidebar", 'FALSE')
     manual_sidebar_tracker('closed')
   })
+
+  # 2. Update table.
+  output$desig_table <- renderDataTable({
+    if(click_regdist() == "Provincial"){
+      #When the focus is provincial, only keep the 10 largest designations
+      # by industry type. This step already done for each district in analysis script.
+      area_per_des %>%
+        dplyr::select(-`District Name`) %>%
+        distinct() %>%
+        arrange(desc(`Area (km²)`)) %>%
+        slice(1:10) %>%
+        ungroup()
+
+    } else if(click_regdist() != "Provincial"){
+      area_per_des %>%
+        filter(`District Name` %in% click_regdist()) %>%
+        dplyr::select(-`District Name`) %>%
+        distinct() %>%
+        arrange(desc(`Area (km²)`))
+    }
+  },
+  options = list(
+    pageLength = 10
+  ))
 
   # If user clicks on 'reset to province' button, reset the selection to 'Provincial'
   observeEvent(input$reset_to_province, {
