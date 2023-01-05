@@ -1,6 +1,7 @@
 library(crosstalk)
 library(shiny)
 library(tidyverse)
+library(DT)
 library(leaflet)
 library(ggtext)
 library(sf)
@@ -138,12 +139,15 @@ three_vertical_boxes = fluidRow(
 
 # Table of specific designation areas
 
-designation_table = box(width = 12,
-                        title = "Largest Designations by Industry",
+designation_table = div(box(width = 12,
+                        title = "10 Largest Designations",
                         maximizable = F,
                         collapsible = T,
                         collapsed = T,
-                        dataTableOutput('desig_table')
+                        div(
+                          DTOutput('desig_table'))
+                          # style = '.tfoot {display: table-header-group;}')
+                       )
 )
 
 # Body of app using {bs4Dash} (hotdog style)
@@ -317,29 +321,31 @@ server <- function(input, output, session) {
   })
 
   # 2. Create and update table.
-  output$desig_table <- renderDataTable({
+  designations_for_table = reactive({
     if(click_regdist() == "Provincial"){
       #When the focus is provincial, only keep the 10 largest designations
       # by industry type. This step already done for each district in analysis script.
       area_per_des %>%
         filter(`District Name` == "Provincial") %>%
-        dplyr::select(-`District Name`) %>%
+        ungroup() %>%
         distinct() %>%
         arrange(desc(`Area (km²)`)) %>%
-        slice(1:10) %>%
-        ungroup()
-
+        dplyr::select(-`District Name`,-`Area (km²)`) %>%
+        slice(1:10)
     } else if(click_regdist() != "Provincial"){
       area_per_des %>%
         filter(`District Name` %in% click_regdist()) %>%
-        dplyr::select(-`District Name`) %>%
+        ungroup() %>%
         distinct() %>%
-        arrange(desc(`Area (km²)`))
+        arrange(desc(`Area (km²)`)) %>%
+        dplyr::select(-`District Name`,-`Area (km²)`) %>%
+        slice(1:10)
     }
-  },
-  options = list(
-    pageLength = 10
-  ))
+  })
+
+  output$desig_table <- renderDT(
+    designations_for_table()
+  )
 
   # If user clicks on 'reset to province' button, reset the selection to 'Provincial'
   observeEvent(input$reset_to_province, {
