@@ -220,33 +220,7 @@ server <- function(input, output, session) {
   num_des_per_reg = read_csv('www/number_designations_per_district.csv')
 
   # Area of largest 10 designations for each natural resource district-restriction type-restriction level combination.
-  area_per_des = read_csv('www/land_designations_area_with_district.csv') %>%
-    mutate(individual_area = individual_area/1000000) %>%
-    mutate(max_rest_ind_type = case_when(
-      max_rest_ind_type == 'forest_restriction_max' ~ "Forestry Restrictions",
-      max_rest_ind_type == 'mine_restriction_max' ~ "Mining Restrictions",
-      max_rest_ind_type == 'og_restriction_max' ~ "Oil/Gas Restrictions"
-    )) %>%
-    #Remove designations that matched with a nameless district (mysterious...)
-    filter(!is.na(DISTRICT_NAME)) %>%
-    #Temporary?: drop the restriction level field, and only keep top 10 largest by restriction type and district name.
-    group_by(DISTRICT_NAME,max_rest_ind_type) %>%
-    arrange(desc(individual_area)) %>%
-    slice(1:10) %>%
-    dplyr::select(-max_rest_ind_value) %>%
-    mutate(is_restricted = is.numeric(individual_area)) %>%
-    mutate(is_restricted = replace(is_restricted,
-                                  T,
-                                  "Yes")) %>%
-    pivot_wider(names_from = max_rest_ind_type,
-                values_from = is_restricted,
-                values_fill = 'No') %>%
-    dplyr::rename(`District Name` = DISTRICT_NAME,
-                  `Designation ID` = designations_planarized_id,
-                  # `Restriction Type` = max_rest_ind_type,
-                  `Area (km²)` = individual_area) %>%
-    ungroup()
-                  # `Restriction Level` = max_rest_ind_value,
+  area_per_des = read_csv('www/overlapping_land_designations_with_district.csv')
 
   # Dataframe of file paths to provincial and district images.
   jpeg_filepaths_df = data.frame(image_path = list.files(path = 'www/regdist_figs',
@@ -342,12 +316,13 @@ server <- function(input, output, session) {
     manual_sidebar_tracker('closed')
   })
 
-  # 2. Update table.
+  # 2. Create and update table.
   output$desig_table <- renderDataTable({
     if(click_regdist() == "Provincial"){
       #When the focus is provincial, only keep the 10 largest designations
       # by industry type. This step already done for each district in analysis script.
       area_per_des %>%
+        filter(`District Name` == "Provincial") %>%
         dplyr::select(-`District Name`) %>%
         distinct() %>%
         arrange(desc(`Area (km²)`)) %>%
