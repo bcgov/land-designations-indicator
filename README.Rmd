@@ -63,6 +63,7 @@ Place this geopackage file in the `data` folder of this repository.
 
 The [`data-raw`](data-raw) folder contains a file [`sources.csv`](data-raw/sources.csv) that lists all of the source land designation layers used in the analysis.
 
+
 ### Running the analysis
 
 - Run the `01_data_processing` file to prepare the data. Note that this will take a long time (~ 30 minutes) and each line of code must be run sequentially. Once the script is open in an R GUI (preferably RStudio) and the required packages have been downloaded onto your local machine, step through the script line by line. This can be done by either pressing the 'Run' button at the top right of the script window or by pressing the control ('Ctrl') key and then the Enter key simultaneously. 
