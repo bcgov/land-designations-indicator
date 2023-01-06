@@ -1,10 +1,10 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022) (preloaded format=xelatex 2022.11.23)  14 DEC 2022 11:36
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022) (preloaded format=xelatex 2022.12.14)  6 JAN 2023 13:03
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **land_designations.tex
 (./land_designations.tex
-LaTeX2e <2022-11-01>
+LaTeX2e <2022-11-01> patch level 1
 L3 programming layer <2022-11-02> (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/koma-script/scrartcl.cls
 Document Class: scrartcl 2022/10/12 v3.38 KOMA-Script document class (article)
 (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/koma-script/scrkbase.sty
@@ -25,7 +25,7 @@ Applying: [2021/05/01] Usage of raw or classic option list on input line 252.
 Already applied: [0000/00/00] Usage of raw or classic option list on input line 368.
 )) (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/koma-script/tocbasic.sty
 Package: tocbasic 2022/10/12 v3.38 KOMA-Script package (handling toc-files)
-\scr@dte@tocline@numberwidth=\skip47
+\scr@dte@tocline@numberwidth=\skip48
 \scr@dte@tocline@numbox=\box51
 )
 Package tocbasic Info: omitting babel extension for `toc'
@@ -42,7 +42,7 @@ Class scrartcl Info: File `scrsize11pt.clo' used to setup font sizes on input li
 File: scrsize11pt.clo 2022/10/12 v3.38 KOMA-Script font size class option (11pt)
 ) (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/koma-script/typearea.sty
 Package: typearea 2022/10/12 v3.38 KOMA-Script package (type area)
-\ta@bcor=\skip48
+\ta@bcor=\skip49
 \ta@div=\count181
 Package typearea Info: You've used standard option `a4paper'.
 (typearea)             This is correct!
@@ -50,10 +50,10 @@ Package typearea Info: You've used standard option `a4paper'.
 (typearea)             If you'd like to set the option with \KOMAoptions,
 (typearea)             you'd have to use `paper=a4' there
 (typearea)             instead of `a4paper', too.
-\ta@hblk=\skip49
-\ta@vblk=\skip50
-\ta@temp=\skip51
-\footheight=\skip52
+\ta@hblk=\skip50
+\ta@vblk=\skip51
+\ta@temp=\skip52
+\footheight=\skip53
 Package typearea Info: These are the values describing the layout:
 (typearea)             DIV  = 10
 (typearea)             BCOR = 0.0pt
@@ -78,46 +78,46 @@ Package typearea Info: These are the values describing the layout:
 \c@subsubsection=\count185
 \c@paragraph=\count186
 \c@subparagraph=\count187
-\scr@dte@section@maxnumwidth=\skip53
+\scr@dte@section@maxnumwidth=\skip54
 Class scrartcl Info: using compatibility default `runin=bysign'
 (scrartcl)           for `\section on input line 4994.
 Class scrartcl Info: using compatibility default `afterindent=bysign'
 (scrartcl)           for `\section on input line 4994.
-\scr@dte@part@maxnumwidth=\skip54
+\scr@dte@part@maxnumwidth=\skip55
 Class scrartcl Info: using compatibility default `afterindent=false'
 (scrartcl)           for `\part on input line 5002.
-\scr@dte@subsection@maxnumwidth=\skip55
+\scr@dte@subsection@maxnumwidth=\skip56
 Class scrartcl Info: using compatibility default `runin=bysign'
 (scrartcl)           for `\subsection on input line 5012.
 Class scrartcl Info: using compatibility default `afterindent=bysign'
 (scrartcl)           for `\subsection on input line 5012.
-\scr@dte@subsubsection@maxnumwidth=\skip56
+\scr@dte@subsubsection@maxnumwidth=\skip57
 Class scrartcl Info: using compatibility default `runin=bysign'
 (scrartcl)           for `\subsubsection on input line 5022.
 Class scrartcl Info: using compatibility default `afterindent=bysign'
 (scrartcl)           for `\subsubsection on input line 5022.
-\scr@dte@paragraph@maxnumwidth=\skip57
+\scr@dte@paragraph@maxnumwidth=\skip58
 Class scrartcl Info: using compatibility default `runin=bysign'
 (scrartcl)           for `\paragraph on input line 5033.
 Class scrartcl Info: using compatibility default `afterindent=bysign'
 (scrartcl)           for `\paragraph on input line 5033.
-\scr@dte@subparagraph@maxnumwidth=\skip58
+\scr@dte@subparagraph@maxnumwidth=\skip59
 Class scrartcl Info: using compatibility default `runin=bysign'
 (scrartcl)           for `\subparagraph on input line 5043.
 Class scrartcl Info: using compatibility default `afterindent=bysign'
 (scrartcl)           for `\subparagraph on input line 5043.
-\abovecaptionskip=\skip59
-\belowcaptionskip=\skip60
+\abovecaptionskip=\skip60
+\belowcaptionskip=\skip61
 \c@pti@nb@sid@b@x=\box52
 Package tocbasic Info: omitting babel extension for `lof'
 (tocbasic)             because of feature `nobabel' available
 (tocbasic)             for `lof' on input line 6211.
-\scr@dte@figure@maxnumwidth=\skip61
+\scr@dte@figure@maxnumwidth=\skip62
 \c@figure=\count188
 Package tocbasic Info: omitting babel extension for `lot'
 (tocbasic)             because of feature `nobabel' available
 (tocbasic)             for `lot' on input line 6227.
-\scr@dte@table@maxnumwidth=\skip62
+\scr@dte@table@maxnumwidth=\skip63
 \c@table=\count189
 Class scrartcl Info: Redefining `\numberline' on input line 6397.
 \bibindent=\dimen140
@@ -175,15 +175,15 @@ Class scrartcl Warning: Usage of package `fancyhdr' together
 
 (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/fancyhdr/fancyhdr.sty
 Package: fancyhdr 2022/11/09 v4.1 Extensive control of page headers and footers
-\f@nch@headwidth=\skip63
-\f@nch@O@elh=\skip64
-\f@nch@O@erh=\skip65
-\f@nch@O@olh=\skip66
-\f@nch@O@orh=\skip67
-\f@nch@O@elf=\skip68
-\f@nch@O@erf=\skip69
-\f@nch@O@olf=\skip70
-\f@nch@O@orf=\skip71
+\f@nch@headwidth=\skip64
+\f@nch@O@elh=\skip65
+\f@nch@O@erh=\skip66
+\f@nch@O@olh=\skip67
+\f@nch@O@orh=\skip68
+\f@nch@O@elf=\skip69
+\f@nch@O@erf=\skip70
+\f@nch@O@olf=\skip71
+\f@nch@O@orf=\skip72
 ) (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/xstring/xstring.sty (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/generic/xstring/xstring.tex
 \integerpart=\count193
 \decimalpart=\count194
@@ -221,7 +221,7 @@ LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 (Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
 )) (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/amsmath/amsmath.sty
 Package: amsmath 2022/04/08 v2.17n AMS math features
-\@mathmargin=\skip72
+\@mathmargin=\skip73
 For additional information on amsmath, use the `?' option.
 (c:/Users/CMADSEN/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/amsmath/amstext.sty
 Package: amstext 2021/08/26 v2.01 AMS text
@@ -277,8 +277,8 @@ LaTeX Info: Redefining \Relbar on input line 971.
 \totwidth@=\dimen166
 \lineht@=\dimen167
 \@envbody=\toks22
-\multlinegap=\skip73
-\multlinetaggap=\skip74
+\multlinegap=\skip74
+\multlinetaggap=\skip75
 \mathdisplay@stack=\toks23
 LaTeX Info: Redefining \[ on input line 2953.
 LaTeX Info: Redefining \] on input line 2954.
@@ -594,7 +594,7 @@ Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 )
 Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 285.
 )
-\Hy@SectionHShift=\skip75
+\Hy@SectionHShift=\skip76
 )
 Package hyperref Info: Option `breaklinks' set `true' on input line 106.
 
@@ -744,14 +744,14 @@ LaTeX Warning: No \author given.
 LaTeX Font Info:    Font shape `TU/PalatinoLinotype(0)/b/n' will be
 (Font)              scaled to size 9.10121pt on input line 142.
 
-Overfull \hbox (2.47536pt too wide) in paragraph at lines 187--187
+Overfull \hbox (2.47536pt too wide) in paragraph at lines 185--185
 [][] 
  []
 
 File: land_designations_files/figure-latex/forest_figures-1.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/forest_figures-1.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 194--195
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 192--193
 [] 
  []
 
@@ -781,7 +781,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/mine_figures-1.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/mine_figures-1.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 202--203
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 200--201
 [] 
  []
 
@@ -798,16 +798,16 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/og_figures-1.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/og_figures-1.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 210--211
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 208--209
 [] 
  []
 
 LaTeX Font Info:    Font shape `TU/Calibri(0)/b/n' will be
-(Font)              scaled to size 13.24026pt on input line 213.
+(Font)              scaled to size 13.24026pt on input line 211.
 File: land_designations_files/figure-latex/unnamed-chunk-2-1.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-1.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 215--216
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 213--214
 [] 
  []
 
@@ -846,7 +846,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-2.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-2.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 218--219
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 216--217
 [][] 
  []
 
@@ -863,7 +863,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-3.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-3.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 221--222
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 219--220
 [][] 
  []
 
@@ -880,7 +880,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-4.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-4.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 224--225
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 222--223
 [][] 
  []
 
@@ -897,7 +897,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-5.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-5.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 227--228
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 225--226
 [][] 
  []
 
@@ -914,7 +914,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-6.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-6.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 230--231
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 228--229
 [][] 
  []
 
@@ -931,7 +931,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-7.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-7.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 233--234
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 231--232
 [][] 
  []
 
@@ -948,7 +948,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-8.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-8.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 236--237
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 234--235
 [][] 
  []
 
@@ -965,7 +965,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-9.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-9.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 239--240
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 237--238
 [][] 
  []
 
@@ -982,7 +982,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-10.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-10.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 242--243
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 240--241
 [][] 
  []
 
@@ -999,7 +999,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-11.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-11.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 245--246
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 243--244
 [][] 
  []
 
@@ -1016,7 +1016,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-12.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-12.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 248--249
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 246--247
 [][] 
  []
 
@@ -1033,7 +1033,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-13.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-13.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 251--252
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 249--250
 [][] 
  []
 
@@ -1050,7 +1050,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-14.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-14.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 254--255
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 252--253
 [][] 
  []
 
@@ -1067,7 +1067,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-15.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-15.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 257--258
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 255--256
 [][] 
  []
 
@@ -1084,7 +1084,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-16.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-16.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 260--261
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 258--259
 [][] 
  []
 
@@ -1101,7 +1101,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-17.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-17.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 263--264
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 261--262
 [][] 
  []
 
@@ -1118,7 +1118,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-18.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-18.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 266--267
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 264--265
 [][] 
  []
 
@@ -1135,7 +1135,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-19.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-19.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 269--270
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 267--268
 [][] 
  []
 
@@ -1152,7 +1152,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-20.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-20.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 272--273
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 270--271
 [][] 
  []
 
@@ -1169,7 +1169,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-21.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-21.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 275--276
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 273--274
 [][] 
  []
 
@@ -1186,7 +1186,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-22.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-22.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 278--279
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 276--277
 [][] 
  []
 
@@ -1203,7 +1203,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 File: land_designations_files/figure-latex/unnamed-chunk-2-23.pdf Graphic file (type pdf)
 <use land_designations_files/figure-latex/unnamed-chunk-2-23.pdf>
 
-Overfull \hbox (9.10757pt too wide) in paragraph at lines 281--282
+Overfull \hbox (9.10757pt too wide) in paragraph at lines 279--280
 [][] 
  []
 
@@ -1218,7 +1218,7 @@ Package fancyhdr Warning: \headheight is too small (42.67912pt):
 
 [28]
 LaTeX Font Info:    Font shape `TU/PalatinoLinotype(0)/m/it' will be
-(Font)              scaled to size 9.10121pt on input line 297.
+(Font)              scaled to size 9.10121pt on input line 295.
 File: C:/Users/CMADSEN/AppData/Local/Programs/R/R-4.2.1/library/envreportutils.internal/rmarkdown/templates/print_ver/resources/img//MoE_EnvReportBC.pdf Graphic file (type pdf)
 <use C:/Users/CMADSEN/AppData/Local/Programs/R/R-4.2.1/library/envreportutils.internal/rmarkdown/templates/print_ver/resources/img//MoE_EnvReportBC.pdf>
 
@@ -1233,10 +1233,10 @@ Package rerunfilecheck Info: File `land_designations.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 21601 strings out of 477643
- 435759 string characters out of 5839156
- 930631 words of memory out of 5000000
- 42428 multiletter control sequences out of 15000+600000
+ 21599 strings out of 477640
+ 435621 string characters out of 5839440
+ 930668 words of memory out of 5000000
+ 42431 multiletter control sequences out of 15000+600000
  477154 words of font info for 94 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  108i,15n,122p,10612b,400s stack positions out of 10000i,1000n,20000p,200000b,200000s

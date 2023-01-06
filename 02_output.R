@@ -11,21 +11,19 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 # Load in packages to be used in this script.
-library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
 library(sf)
-library(raster)
 library(RColorBrewer)
 library(envreportutils)
 library(bcmaps)
 library(magick)
 
-# Remove objects in the environment - metaphorically cleaning the top of your desk before working.
-rm(list = ls())
-
 #Double check that directories 'out' and 'land_designations_webapp/www' exists - if not, create them.
 if (!exists("out")) dir.create("out", showWarnings = FALSE)
 if (!exists("land_designations_webapp/www")) dir.create("land_designations_webapp/www", showWarnings = FALSE)
-if (!exists("cons_area_all")) load("tmp/clean.RData") # Load in data
 if (!exists("ld_with_reg")) load("tmp/ld_with_reg.RData") #Load in data
 
 #If your local machine does not yet have a simplified version of the natural resource districts, do the following:
@@ -37,15 +35,13 @@ if(!file.exists('tmp/bc_regdists.gpkg')){
   bc_regs_small = st_simplify(bc_regs, dTolerance = 2500)
 
   write_sf(bc_regs_small, 'tmp/bc_regdists.gpkg')
-  write_sf(bc_regs_small, 'land_designations_webapp_3col/www/bc_regdists.gpkg')
+  write_sf(bc_regs_small, 'land_designations_webapp/www/bc_regdists.gpkg')
 
   rm(bc_regs_small); rm(bc_regs)
 }
 
 #Conversely, if your machine already has these districts as a geopackage, load them in.
 if (!exists('bc_regs')) bc_regs = read_sf('tmp/bc_regdists.gpkg')
-# if (!exists("ld")) load("tmp/raw_data_vect.RData")
-
 
 ### Setting or calculating values to be used in the rest of the code.
 
@@ -97,6 +93,7 @@ image_read('out/forest_restriction_plot.jpeg') %>%
   image_scale('x1000') %>%
   image_crop('700x600+45+200') %>%
   image_write('out/forest_restriction_plot.jpeg')
+rm(forest_plot)
 
 mine_plot = mapping_data %>%
   ggplot() +
@@ -115,6 +112,7 @@ image_read('out/mine_restriction_plot.jpeg') %>%
   image_scale('x1000') %>%
   image_crop('700x600+45+200') %>%
   image_write('out/mine_restriction_plot.jpeg')
+rm(mine_plot)
 
 og_plot = mapping_data %>%
   ggplot() +
@@ -133,17 +131,18 @@ image_read('out/og_restriction_plot.jpeg') %>%
   image_scale('x1000') %>%
   image_crop('700x600+45+200') %>%
   image_write('out/og_restriction_plot.jpeg')
+rm(og_plot)
 
 ### Copy the provincial-scale JPEGs (n=3) we just made to the R Shiny www/ folder.
 
 # First, delete any old versions of these jpegs that we have in that folder...
-file.remove(list.files(path = 'land_designations_webapp_3col/www/',
+file.remove(list.files(path = 'land_designations_webapp/www/',
                        pattern = '_plot\\.jpeg',full.names = T))
 
 # Next, copy the 3 jpegs from the /out folder to the land_designations_webapp folder
 list.files(path = 'out/', pattern = "[^des]\\.jpeg") %>%
   map( ~ {
-    file.copy(from = paste0('out/',.x),to = paste0('land_designations_webapp_3col/www/',.x))
+    file.copy(from = paste0('out/',.x),to = paste0('land_designations_webapp/www/',.x))
   })
 
 # Summarise total area by industry type, natural resource district, and restriction level.
@@ -191,39 +190,17 @@ bc_reg_dat = area_by_regdist_and_industry_and_restriction_value %>%
                                                    "Low","None")))
 
 # Write these summary data to the shiny app's /www folder.
-write.csv(bc_reg_dat,'land_designations_webapp_3col/www/bc_reg_dat.csv',
+write.csv(bc_reg_dat,'land_designations_webapp/www/bc_reg_dat.csv',
           row.names = F)
-
-
-# Calculate the number of designations per district.
-num_des_per_reg = ld_with_reg %>%
-  st_drop_geometry() %>%
-  pivot_longer(cols = ends_with('_max'), names_to = 'industry_name', values_to = 'max_restriction_value') %>%
-  filter(max_restriction_value != '0') %>%
-  group_by(DISTRICT_NAME,industry_name) %>%
-  count(max_restriction_value, name = 'number_designations') %>%
-  mutate(total_designations = sum(number_designations)) %>%
-  dplyr::select(DISTRICT_NAME, industry_name, total_designations) %>%
-  distinct()
-
-num_des_per_reg = num_des_per_reg %>%
-  bind_rows(
-    num_des_per_reg %>%
-      group_by(industry_name) %>%
-      summarise(total_designations = sum(total_designations)) %>%
-      mutate(DISTRICT_NAME = 'Provincial')
-  )
-
-write.csv(num_des_per_reg, 'land_designations_webapp_3col/www/number_designations_per_district.csv', row.names = F)
 
 
 # # #  JPEGs for each Natural Resource district
 # Clear out images currently in tmp/regdist_figs, tmp/regdist_svgs, and
 # land_designations_webapp_3col/www/regdist_figs
 
-file.remove(list.files(path = './tmp/regdist_figs/',full.names = T))
-file.remove(list.files(path = './tmp/regdist_svgs/',full.names = T))
-file.remove(list.files(path = './land_designations_webapp_3col/www/regdist_figs/',full.names = T))
+# file.remove(list.files(path = './tmp/regdist_figs/',full.names = T))
+# file.remove(list.files(path = './tmp/regdist_svgs/',full.names = T))
+file.remove(list.files(path = './land_designations_webapp/www/regdist_figs/',full.names = T))
 
 # For each industry and district, make a high-resolution map piece.
 for(industry in c("forest_restriction_max","mine_restriction_max","og_restriction_max")){
@@ -263,9 +240,11 @@ for(industry in c("forest_restriction_max","mine_restriction_max","og_restrictio
       g = g + scale_fill_brewer(palette = 'Oranges')
     }
 
-    ggsave(filename = paste0('tmp/regdist_figs/',industry,"_",district_name,".jpeg"),
+    # ggsave(filename = paste0('tmp/regdist_figs/',industry,"_",district_name,".jpeg"),
+    #        plot = g, width = 4, height = 4, dpi = 200)
+    ggsave(filename = paste0('land_designations_webapp/www/regdist_figs/',industry,"_",district_name,".jpeg"),
            plot = g, width = 4, height = 4, dpi = 200)
-    file.copy(from = paste0('tmp/regdist_figs/',industry,"_",district_name,".jpeg"),
-              to = paste0('land_designations_webapp_3col/www/regdist_figs/',industry,"_",district_name,".jpeg"))
+    # file.copy(from = paste0('tmp/regdist_figs/',industry,"_",district_name,".jpeg"),
+    #           to = paste0('land_designations_webapp/www/regdist_figs/',industry,"_",district_name,".jpeg"))
   }
 }

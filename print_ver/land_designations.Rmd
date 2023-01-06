@@ -33,7 +33,9 @@ library(magrittr) # %>%
 library(feather) #read in feather file
 library(ggthemes)
 library(knitr) #for knitting to PDF
-library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(stringr)
 library(ggtext)
 library(patchwork)
 
@@ -47,14 +49,9 @@ root_directory = paste0(str_remove(getwd(),"print_ver"), "/")
 # read_chunk(root$find_file("03_output_static.R"))
 
 ## read in datafiles
-bc_reg_dat = read_csv(paste0(root_directory,'land_designations_webapp_3col/www/bc_reg_dat.csv')) %>%
+bc_reg_dat = read.csv(paste0(root_directory,'land_designations_webapp/www/bc_reg_dat.csv')) %>%
   mutate(max_restriction_value = factor(max_restriction_value,
                                         levels = c("Full","High","Medium","Low","None")))
-# ld_df <- read_feather(root$find_file("out-shiny/gg_ld_ecoreg.feather"))
-# bc_map <-  read_feather(root$find_file("out-shiny/gg_bc_bound.feather"))
-# bcsum <- read.csv(root$find_file("out/bc_land_designations_summary.csv"), stringsAsFactors = FALSE)
-# bgc <- read.csv(root$find_file("out/bc_bgc_zone_land_designations_summary.csv"), stringsAsFactors = FALSE)
-# eco <- read.csv(root$find_file("out/bc_ecoregions_land_designations_summary.csv"), stringsAsFactors = FALSE)
 
 ### Custom plotting functions.
 regdist_barplot = function(dat, industry = NULL, district = NULL){
@@ -109,35 +106,6 @@ regdist_barplot = function(dat, industry = NULL, district = NULL){
 ```{r pre}
 ```
 
-```{r original_text}
-# Land designations that contribute to conservation are spatially-defined areas established through legislation or purchased for the protection of nature and cultural values, the conservation of biological diversity and ecosystem services and the management of natural resources. For example, conservation land designations include areas established as parks, areas identified to protect species at risk or cultural heritage, and areas that are identified to manage the balance of nature conservation and economic opportunities. This indicator reports on the status of land designations that are intended to contribute to conservation in British Columbia.
-# 
-# 
-# -   Land designations that contribute to conservation are summarized in
-# three categories: **Protected Lands, Resource Exclusion Areas and
-# Spatially Managed Areas**. The three categories span a considerable
-# range in contribution to conservation, with variation in purpose,
-# scope and strength---with respect to intended conservation
-# outcomes---and length of the term of the designations.
-# -   **Protected Lands**---covering 15.4% of British Columbia---includes all
-# **Parks & Protected Areas** (15.0%) and **Other Protected Lands**
-# (0.4%) with the *primary* purpose of the *long-term* conservation of
-# nature and cultural values.
-# -   **Resource Exclusion Areas**---covering 12.4% of B.C.---includes all
-# designations that fully exclude one or two resource activities for
-# the purpose of conservation.
-# -   **Spatially Managed Areas**---currently covering 24.5% of B.C.---
-# includes all spatial designations managing or limiting development
-# or a resource activity for the purpose of conservation, or a spatial
-# management regime in place to preserve specified elements of
-# biodiversity but where activity is still allowed to occur. The
-# designations within this category vary significantly in purpose and
-# scope of management.
-# -   More detail on the land designations that contribute to conservation
-# and the three categories are provided in the Details section below.
-```
-
-
 Land designations are spatially defined areas established through legislation or purchased for the protection of nature and cultural values. Each designation specifies the limit of resource extraction for one or more of the following industries: forestry, mining, and oil and gas.
 
 - For this indicator, land designations have been grouped into five levels of industry restriction: **Full, High, Medium, Low, and None.** The five categories span a considerable range in industry restriction, with variation in purpose, scope, strength, and length of the term of the designations. In addition, the mosaic of land designations in B.C. is complex and many designations overlap. Note: Land Designations of the three industries should be treated independently and therefore should not be summed.
@@ -164,10 +132,6 @@ Land designations are spatially defined areas established through legislation or
 \text{and \textbf{48.5\%} of lands have restricted oil and gas extraction.}
 
 \vspace{3mm}
-
-```{r original_link_1}
-# \href{http://www.env.gov.bc.ca/soe/indicators/land/protected-lands-and-waters.html}{Learn more about Protected Lands \& Waters in B.C.}
-```
 
 \end{minipage}
 }
@@ -251,7 +215,7 @@ for(region_name in my_names) {
   #Forest
   my_jpeg_forest = ggplot() +
     ggimage::geom_image(aes(
-      image = paste0("land_designations_webapp_3col/www/regdist_figs/forest_restriction_max_",region_name,".jpeg"),
+      image = paste0("land_designations_webapp/www/regdist_figs/forest_restriction_max_",region_name,".jpeg"),
       x = 1, y = 1), 
       size = image_size) + 
     # ggtitle(paste0(region_name, " - Forestry (2022)")) +
@@ -267,7 +231,7 @@ for(region_name in my_names) {
   #Mining
   my_jpeg_mining = ggplot() +
     ggimage::geom_image(aes(
-      image = paste0("land_designations_webapp_3col/www/regdist_figs/mine_restriction_max_",region_name,".jpeg"),
+      image = paste0("land_designations_webapp/www/regdist_figs/mine_restriction_max_",region_name,".jpeg"),
       x = 1, y = 1), 
       size = image_size) + 
     # ggtitle(paste0(region_name, " - Mining (2022)")) +
@@ -283,7 +247,7 @@ for(region_name in my_names) {
   #Oil and Gas
   my_jpeg_og = ggplot() +
     ggimage::geom_image(aes(
-      image = paste0("land_designations_webapp_3col/www/regdist_figs/og_restriction_max_",region_name,".jpeg"),
+      image = paste0("land_designations_webapp/www/regdist_figs/og_restriction_max_",region_name,".jpeg"),
       x = 1, y = 1), 
       size = image_size) + 
     # ggtitle(paste0(region_name, " - Oil and Gas (2022)")) +
@@ -303,8 +267,6 @@ EF
 "
   patchwork = my_jpeg_forest + my_barplot_forest + my_jpeg_mining + my_barplot_mining + my_jpeg_og + my_barplot_og + plot_layout(design = my_layout, heights = c(1,1))
   
-  # patchwork = (my_jpeg_forest/my_barplot_forest) | (my_jpeg_mining/my_barplot_mining) | (my_jpeg_mining/my_barplot_mining) + plot_layout(nrow = 2, ncol = 3, heights = c(1,1))
-  
   patchwork = patchwork + plot_annotation(title = region_name)
   
   cat("\n")
@@ -314,71 +276,6 @@ EF
 ```
 
 ## Details of Land Designations that Contribute to Conservation 
-
-```{r}
-# -   **Protected Lands (15.4%)**
-# -   Includes **Parks & Protected Areas (15.0%)**, designations
-# enacted in legislation with a *primary* purpose of the
-# *long-term* conservation of nature and cultural values *and*
-# that are administered by a government parks and protected areas
-# agency [BC Parks](http://www.env.gov.bc.ca/bcparks/) and [Parks
-# Canada](http://www.pc.gc.ca/eng/index.aspx)). Municipal and
-# regional parks and water supply areas are not included in the
-# analysis at this time.
-# -   Includes **Other Protected Lands (0.4%)**, such as B.C.'s
-# non-governmental organization conservation areas or private
-# conservation lands. These are designations and lands
-# administered or owned by a [non-governmental conservation
-# organization](http://ltabc.ca/publications-a-research/british-columbia-conservation-areas-summary-report-2015-16/)
-# and managed for the long-term conservation of wildlife habitat
-# values.
-# -   Other Protected Lands also includes designations enacted in legislation with a primary
-# purpose of the long-term conservation of biodiversity and/or
-# ecosystem services, such as National Wildlife Areas and
-# Migratory Bird Sanctuaries, both designated by the Government of
-# Canada, and [Wildlife Management
-# Areas](http://www.env.gov.bc.ca/fw/habitat/conservation-lands/)
-# designated under the provincial [*Wildlife
-# Act*](http://www.bclaws.ca/EPLibraries/bclaws_new/document/ID/freeside/00_96488_01).
-# -   **Resource Exclusion Areas (12.4%)**
-# -   Includes designations excluding one or two resource
-# activities---such as forestry, mining or large-scale
-# hydro-electric development---for the purpose of conservation.
-# -   The excluded resource activity is often a primary threat to
-# biodiversity in the established area, making the designation an
-# important contribution to conservation.
-# -   Some examples include designations such as no-harvest [Wildlife
-# Habitat Areas](http://www.env.gov.bc.ca/wld/frpa/iwms/wha.html)
-# designated under the [*Forest and Range Practices
-# Act*](http://www.bclaws.ca/Recon/document/ID/freeside/00_02069_01),
-# [Grizzly Bear Habitat (Class
-# 1)](https://www.for.gov.bc.ca/tasb/slrp/plan17.html)
-# designated under the [*Land
-# Act*](http://www.bclaws.ca/EPLibraries/bclaws_new/document/ID/freeside/00_96245_01),
-# and the [Sea to Sky Wildland
-# Areas](https://www.for.gov.bc.ca/tasb/slrp/plan79.html)
-# designated under the [*Environment and Land Use
-# Act*](http://www.bclaws.ca/EPLibraries/bclaws_new/document/ID/freeside/00_96117_01).
-# -   **Spatially Managed Areas (24.5%)**
-# -   Includes spatial designations managing or limiting development
-# or a resource activity---such as forestry, mining or large-scale
-# hydro-electric development---for the purpose of conservation, or a
-# spatially-defined management regime in place to preserve
-# specified elements of biodiversity but where activity is still
-# allowed to occur.
-# -   Some examples include designations such as conditional-harvest
-# [Wildlife Habitat
-# Areas](http://www.env.gov.bc.ca/wld/frpa/iwms/wha.html),
-# conditional-harvest [Ungulate Winter
-# Range](http://www.env.gov.bc.ca/wld/frpa/uwr/index.html), and
-# [Visual Quality
-# Objectives](http://www2.gov.bc.ca/gov/content?id=C45131B6586243CD8A91D399B5712256)---all designated under the [*Forest and Range Practices
-# Act*](http://www.bclaws.ca/Recon/document/ID/freeside/00_02069_01)---and Important Fisheries Watersheds and other [legal objectives
-# established for the the Great Bear
-# Rainforest](https://www.for.gov.bc.ca/tasb/slrp/plan17.html)
-# under the [*Land
-# Act*](http://www.bclaws.ca/EPLibraries/bclaws_new/document/ID/freeside/00_96245_01).
-```
 
 The complete list of included land designations, category information,
 data sources, and data licence details is [available in CSV
@@ -392,7 +289,6 @@ indicator only reports on *legal, spatially-defined* areas that
 contribute to conservation. The analysis presents the current status of
 land designations and the intended contribution to conservation---the
 effectiveness of land designations has not been evaluated. The [**Python**](https://www.python.org/) and [**R**](http://www.r-project.org) code for repeating the analysis and data visualizations presented on this page is available on [GitHub](https://github.com/bcgov/land-designations-indicator).
-
 
 ## References and Other Useful Links
 
@@ -414,14 +310,6 @@ Land](http://www2.gov.bc.ca/gov/content?id=63DF75221AF440A4AA6A9BCD34711A8C)
 -   [Indicator Summary Data: Land Designations for Limited Resource Extraction in B.C.](https://catalogue.data.gov.bc.ca/dataset/2ad14e62-e0b1-4989-9333-6082177f61e8) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
 
 -   [Land Designations Limited Resource Extraction in B.C. - Spatial Data](https://catalogue.data.gov.bc.ca/dataset/e0b30537-5498-437b-b668-9fafe44bf903) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
-
-```{r}
-# -   [Ecoregions - Ecoregion Ecosystem Classification of British
-# Columbia](https://catalogue.data.gov.bc.ca/dataset/d00389e0-66da-4895-bd56-39a0dd64aa78) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
-# 
-# -   [Biogeoclimatic Ecosystem Classification (BEC)
-# Map](https://catalogue.data.gov.bc.ca/dataset/f358a53b-ffde-4830-a325-a5a03ff672c3) (Licence: [Open Government Licence - British Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61))
-```
 
 Published and Available On-Line at Environmental Reporting BC (December 2022):
 [http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html)

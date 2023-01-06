@@ -13,10 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 [![img](https://img.shields.io/badge/Lifecycle-Stable-97ca00)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
-# Analysis of land designations that contribute to conservation
+# Analysis of land designations for limited resource extraction
 
-This repository contains R code that calculates summaries of the amount of land 
-designated in B.C. that contributes to conservation. It supports this 
+This repository contains R code that calculates summaries of the various land 
+designations in B.C. that restrict resource extraction. It supports this 
 [Environmental Reporting BC indicator](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html).
 
 ## Usage
@@ -34,6 +34,7 @@ Other than `bcmaps` and `envreportutils`, all required packages are available fr
 - readr
 - dplyr
 - tidyr
+- purrr
 - sf
 - ggplot2
 - ggpolypath

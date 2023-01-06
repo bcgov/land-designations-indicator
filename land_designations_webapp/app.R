@@ -1,321 +1,415 @@
+library(crosstalk)
 library(shiny)
 library(tidyverse)
-library(leaflet)
-# library(magick)
-# library(ggimage)
-library(ggtext)
-# library(slickR)
-library(sf)
-library(bslib)
 library(DT)
-
-# setwd("C:/Users/CMADSEN/Downloads/LocalR/land-designations-indicator")
+library(sf)
+library(leaflet)
+library(ggtext)
+library(bs4Dash)
+library(fresh)
+library(plotly)
+library(shinyjs)
+library(RColorBrewer)
+library(scales)
 
 rm(list = ls())
 
-# ld_theme <- bs_theme(
-#   bg = "#F2F2F2", fg = "#131313",
-#   # Controls the accent (e.g., hyperlink, button, etc) colors
-#   primary = "#80C4FC", secondary = "#6877EF",
-#   # base_font = c("Grandstander", "sans-serif"),
-#   base_font = c("BC Sans","Bold"),
-#   # code_font = c("Courier", "monospace"),
-#   code_font = c("BCSans-Regular"),
-#   heading_font = c("BCSans-Regular"),
-#   # Can also add lower-level customization
-#   "input-border-color" = "#EA80FC"
-# )
+### Static layout settings ###
 
-prov_fig_dat = data.frame(industry = c('Forestry','Mining','Oil and Gas'),
-                          prov_image_path = c('forest_restriction_plot.jpeg',
-                                              'mine_restriction_plot.jpeg',
-                                              'og_restriction_plot.jpeg'),
-                          bar_image_path = c('forestry_barplot.png',
-                                             'mining_barplot.png',
-                                             'og_barplot.png'))
+# Row width and height
+my_row_width_minimized = '235px'
+my_row_width_maximized = '300px'
+my_row_height_minimized = paste0((6/7)*as.numeric(str_remove(my_row_width_minimized,'px')),"px")
+my_row_height_maximized = paste0((6/7)*as.numeric(str_remove(my_row_width_maximized,'px')),"px")
 
-### Input Filters
-industry_filter = selectInput(
-  inputId = 'industry_filter',
-  label = "Select Industry",
-  choices = prov_fig_dat$industry,
-  selected = "Forestry"
+# Sidebar width
+my_sidebar_width = '35%'
+my_box_content_width = '115%'
+
+# Plotting function
+
+regdist_barplot = function(dat, industry = NULL, reactive_height = NULL, number_ticks = 4){
+
+  mapping_dat = dat %>%
+    filter(industry_name == industry) %>%
+    mutate(Proportion = paste0(round(100*proportional_area,1),"%"))
+
+  g = ggplot(mapping_dat,
+             aes(label = Proportion)) +
+    geom_col(aes(x = max_restriction_value,
+                 y = proportional_area,
+                 fill = max_restriction_value,
+                 col = max_restriction_value),
+             linewidth = 1/5) +
+    coord_flip() +
+    scale_y_continuous(labels = scales::label_percent(),
+                       breaks = scales::breaks_pretty(n = number_ticks)) +
+    labs(x = "Restriction Level",
+         y = "Percent of <br>Area") +
+    theme_bw() +
+    theme(axis.text = element_text(size = 10),
+          axis.title.y = element_text(size = 12),
+          axis.title.x = element_markdown(size = 12),
+          legend.position = 'none')
+
+  # Number of restriction levels (this varies!)
+  num_levels = length(unique(mapping_dat$max_restriction_value))
+
+  # Colour palette (conditional)
+  my_palette = case_when(
+    str_detect(industry, 'forest.*') ~ 'Greens',
+    str_detect(industry, 'mine_.*') ~ 'Purples',
+    str_detect(industry, 'og_.*') ~ 'Oranges'
+  )
+
+  my_fill_scale = rev(RColorBrewer::brewer.pal(n = num_levels, my_palette))
+  my_fill_scale[num_levels] = 'white'
+  my_color_scale = c(rep('white',num_levels-1),'black')
+
+  g = g + scale_fill_manual(values = my_fill_scale) +
+    scale_color_manual(values = my_color_scale)
+
+  ggplotly(g,
+           tooltip = 'label',
+           # height = '100%') %>%
+           height = 1.40*as.numeric(str_extract(reactive_height, '[0-9]*'))) %>%
+    config(displayModeBar = F)
+}
+
+
+## Buttons and inputs
+
+reset_focus_button = div(
+  actionButton(
+    inputId = 'reset_to_province',
+    label = "Reset Selection to Province"
+  ),
+  style = 'display:inline;'
 )
 
-### Horizontal Orientation ###
-ui <- bslib::page_fluid(
-  titlePanel(
-    title = "Land Designation Indicator"
-    ),
-    theme = 'cerulean',
-  sidebarLayout(
-    sidebarPanel(
-      width = 5,
-      height = 1000,
-      industry_filter,
-      uiOutput('spatial_scale_selector'),
-      plotOutput('bar_fig'#, height = 500)
-      )
-    ),
-    mainPanel(width = 7,
-              tabsetPanel(
-                tabPanel(
-                  title = "Static Map",
-                  card(
-                    card_header(),
-                    card_body(
-                      uiOutput('jpeg_fig', width = '50px'),
-                      plotOutput('map_insert', height = '200px')
-                    ),
-                    width = '100%',
-                    style = 'z-index:10;'
-                  )
-                ),
-                tabPanel(
-                  title = "Interactive Leaflet Map",
-                  leafletOutput('leaflet_map', height = '550px')
-                )
-              )
-    )
+## Body design:
+
+# Three vertical boxes that each display one of the industries (static map) and a plotly barchart.
+three_vertical_boxes = fluidRow(
+  column(width = 4,
+         box(width = 12,
+             title = "Forestry Restrictions",
+             status = 'success',
+             style = '.crosstalk-bscols {box-sizing:content-box}',
+             maximizable = F,
+             collapsible = F,
+             div(
+               crosstalk::bscols(
+                 list(
+                   uiOutput('jpeg_fig_forest'),
+                   plotlyOutput('barplot_forest', height = 'auto', width = my_box_content_width)
+                 )
+               ),
+               style = '{box-sizing:content-box}',
+             )
+         )
+  ),
+  column(width = 4,
+         box(width = 12,
+             title = 'Mining Restrictions',
+             status = 'info',
+             maximizable = F,
+             collapsible = F,
+             crosstalk::bscols(
+               list(
+                 uiOutput('jpeg_fig_mine'),
+                 plotlyOutput('barplot_mine', height = 'auto', width = my_box_content_width)
+               )
+             )
+         )
+  ),
+  column(width = 4,
+         box(width = 12,
+             title = "Oil/Gas Restrictions",
+             status = 'danger',
+             maximizable = F,
+             collapsible = F,
+             crosstalk::bscols(
+               list(
+                 uiOutput('jpeg_fig_og'),
+                 plotlyOutput('barplot_og', height = 'auto', width = my_box_content_width)
+               )
+             )
+         )
   )
 )
 
-### Vertical organization ###
-# ui <- bslib::page_fluid(
-#   titlePanel(
-#     title = "Land Designation Indicator"
-#   ),
-#   card(
-#     card_header(h5('Controls')),
-#     card_body(
-#       crosstalk::bscols(
-#         industry_filter,
-#         uiOutput('spatial_scale_selector')
-#       )
-#     )
-#   ),
-#   card(
-#     card_header(h5("Output"), class = 'bg-success'),
-#     card_body(
-#       uiOutput('jpeg_fig'),
-#       plotOutput('bar_fig'),
-#       plotOutput('map_insert', height = '200px')
-#     )
-#   )
-# )
+# Table of specific designation areas
 
+designation_table = div(box(width = 12,
+                        title = "10 Largest Designations in Area of Focus",
+                        maximizable = F,
+                        collapsible = T,
+                        collapsed = T,
+                        div(
+                          DTOutput('desig_table'))
+                       )
+)
 
-server <- function(input, output) {
+# Body of app using {bs4Dash} (hotdog style)
+boxes_body_long = bs4DashBody(width = 5,
+                              useShinyjs(),
+                              # The following script allows us to manually change the input value
+                              # that tracks whether the sidebar is open or closed. Useful!
+                              tags$script("
+    Shiny.addCustomMessageHandler('leaflet_sidebar', function(value) {
+    Shiny.setInputValue('leaflet_sidebar', value);
+    });"),
+                              div(textOutput('region_selected_text'),
+                                  style = 'text-align:center;font-size:26px;font-family:bold;padding:10px;'),
+                              # 3 rows, one per industry, with regional jpeg on left, barplot on right. Table below.
+                              three_vertical_boxes,
+                              designation_table
+)
 
-  ### Static entities
-  bc_size = 941944305881
+my_theme = create_theme(
+  bs4dash_status(
+    success = '#28a745',
+    info = '#6f42c1',
+    danger = '#F77408'
+  ),
+  bs4dash_layout(
+    sidebar_width = my_sidebar_width,
+    screen_header_collapse = 1
+  ),
+  bs4dash_button(
+    default_background_color = '#e6e9ed'
+  )
+)
 
-  bc_regs = read_sf('www/bc_regdists.gpkg') %>%
-    mutate(industry_name_key = industry_name) %>%
-    mutate(industry_name = case_when(
-      str_detect(industry_name, 'forest_') ~ "Forestry",
-      str_detect(industry_name, 'mine_') ~ "Mining",
-      str_detect(industry_name, 'og_') ~ "Oil and Gas"
-    )) %>%
-    mutate(max_rlevel = max_restriction_value) %>%
-    mutate(max_restriction_value = case_when(
-      max_restriction_value == 0 ~ "NA",
-      max_restriction_value == 1 ~ "Other (Very Low)",
-      max_restriction_value == 2 ~ "Managed Areas (Low)",
-      max_restriction_value == 3 ~ "Resource Exclusion Area (Medium)",
-      max_restriction_value == 4 ~ "Other Protected Lands (High)",
-      max_restriction_value == 5 ~ "Parks & Protected Areas (Full)"
-    )) %>%
-    mutate(max_restriction_value = replace(max_restriction_value, max_rlevel == "NA", NA))
-
-  regdist_sum_dat = read.csv('www/ld_choro.csv') %>%
-    as_tibble() %>%
-    mutate(industry_name_key = industry_name) %>%
-    mutate(industry_name = case_when(
-      str_detect(industry_name, 'forest_') ~ "Forestry",
-      str_detect(industry_name, 'mine_') ~ "Mining",
-      str_detect(industry_name, 'og_') ~ "Oil and Gas"
-    )) %>%
-    mutate(max_rlevel = max_restriction_value) %>%
-    mutate(max_restriction_value = case_when(
-      max_restriction_value == 0 ~ "NA",
-      max_restriction_value == 1 ~ "Other (Very Low)",
-      max_restriction_value == 2 ~ "Managed Areas (Low)",
-      max_restriction_value == 3 ~ "Resource Exclusion Area (Medium)",
-      max_restriction_value == 4 ~ "Other Protected Lands (High)",
-      max_restriction_value == 5 ~ "Parks & Protected Areas (Full)"
-    )) %>%
-    mutate(max_restriction_value = replace(max_restriction_value, max_rlevel == "NA", NA))
-
-  #Add a summary row for the whole province.
-  regdist_sum_dat = regdist_sum_dat %>%
-    bind_rows(
-      regdist_sum_dat %>%
-        group_by(industry_name,industry_name_key,max_restriction_value,max_rlevel) %>%
-        summarise(area = sum(area,na.rm=T)) %>%
-        mutate(ADMIN_AREA_NAME = "Provincial")
+ui <- bs4Dash::bs4DashPage(
+  freshTheme = my_theme,
+  dark = NULL,
+  header = bs4DashNavbar(
+    title = div(
+      h5("Click a District to Refine Results",style = "color:white;text-align:center;padding-top:15px")
+    ),
+    sidebarIcon = div(
+      img(src = 'bc_silhouette2.png', style = 'width:35px;'),
+      h5("Click to Show/Hide District Map", style = 'display:inline;')
+    ),
+    rightUi = tags$li(class = 'dropdown',
+                      reset_focus_button
     )
+  ),
+  # HTML('<br>'), #class = 'nav-item'),
+  sidebar = bs4DashSidebar(
+    id = 'leaflet_sidebar',
+    minified = F,
+    leafletOutput('sel_reg_map', height = "650px"),
+    h5("Click and Drag to Move Map",style = "color:white;text-align:center;padding-top:15px"),
+    column(width = 10,offset = 2)
+  ),
+  body = boxes_body_long,
+  title = NULL
+)
 
-  # #Replace character "NA" with actual NA.
-  # regdist_sum_dat[regdist_sum_dat$max_restriction_value == 'NA',] = NA
+server <- function(input, output, session) {
+
+  ### Static objects and values
+
+  # Area of largest 10 designations for each natural resource district-restriction type-restriction level combination.
+  area_per_des = read_csv('www/overlapping_land_designations_with_district.csv') %>%
+    mutate(Designation = name) %>%
+    dplyr::select(-name)
+
+  # Dataframe of file paths to provincial and district images.
+  jpeg_filepaths_df = data.frame(image_path = list.files(path = 'www/regdist_figs',
+                                                         pattern = '^forest.*')) %>%
+    mutate(image_path = str_remove(image_path, '^forest_')) %>%
+    mutate(regdist = str_extract(image_path, "(?<=max_).*(?=\\.jpeg)")) %>%
+    #Add 3 rows to table, one for each provincial-scale jpeg.
+    bind_rows(
+      data.frame(
+        image_path = "restriction_plot.jpeg",
+        regdist = 'Provincial'
+      )
+    ) %>%
+    as_tibble()
+
+  # Geopackage (spatial file) of districts of BC, with max restriction level data
+  # included.
+  bc_regs = read_sf('www/bc_regdists.gpkg') %>%
+    dplyr::select(DISTRICT_NAME) %>%
+    st_transform(crs = 4326)
+
+  bc_reg_dat = read_csv('www/bc_reg_dat.csv') %>%
+    mutate(max_restriction_value = factor(max_restriction_value,
+                                          levels = c("Full","High","Medium","Low","None")))
 
   ### Reactive entities
-  province_fig_dat_filtered = reactive({
-    prov_fig_dat %>%
-      filter(industry %in% input$industry_filter)
-  })
 
-  bcRegsFiltered = reactive({
-    bc_regs %>%
-      filter(industry_name %in% input$industry_filter) %>%
-      filter(ADMIN_AREA_NAME %in% input$spatial_scale_selector)
-  })
+  # Status of the sidebar. This is a workaround, as we are not able to directly
+  # set the input$leaflet_sidebar. So, this reactive entity will keep track for us.
+  manual_sidebar_tracker = reactiveVal(value = 'open')
 
-  bcRegsLeafletDat = reactive({
-    bc_regs %>%
-      filter(industry_name %in% input$industry_filter)
-  })
-
-  regDistSumms = reactive({
-    regdist_sum_dat %>%
-      filter(industry_name %in% input$industry_filter) %>%
-      filter(ADMIN_AREA_NAME %in% input$spatial_scale_selector)
-  })
-
-  ### Render Visuals and UI Elements
-  output$spatial_scale_selector = renderUI({
-    selectInput(
-      inputId = 'spatial_scale_selector',
-      label = "Select Spatial Scale",
-      choices = c("Provincial",all_of(bc_regs$ADMIN_AREA_NAME)),
-      selected = 'Provincial',
-      selectize = T
-    )
-  })
-
-  output$jpeg_fig = renderUI({
-    if(input$spatial_scale_selector == "Provincial"){
-      tags$img(src = province_fig_dat_filtered()$prov_image_path,
-               width = '100%')
-    } else {
-      tags$img(src = paste0("regdist_figs/",
-                            regDistSumms()$industry_name_key[1],
-                            "_",
-                            regDistSumms()$ADMIN_AREA_NAME[1],
-                            ".jpeg"),
-               width = '90%')
+  # Reactive number of x-axis ticks and labels for plotly figures;
+  # responds to whether or not the sidebar is open.
+  numberTicks = reactive({
+    if(input$leaflet_sidebar){
+      2
+    }
+    else {
+      4
     }
   })
 
-  output$map_insert = renderPlot({
-    if(input$spatial_scale_selector == "Provincial")return(NULL)
-    ggplot() +
-      geom_sf(data = bc_regs, fill = 'antiquewhite', col = 'grey') +
-      geom_sf(data = bcRegsFiltered(), fill = "red", col = 'black') +
-      ggthemes::theme_map()
-  })
+  # Leaflet map to select districts
 
-  output$bar_fig = renderPlot({
+  output$sel_reg_map <- renderLeaflet({
 
-    if(input$spatial_scale_selector == "Provincial"){
-      dat = regDistSumms() %>%
-        group_by(max_restriction_value,max_rlevel) %>%
-        summarise(area_summed = sum(area,na.rm=T),.groups = "drop") %>%
-        mutate(area_prop = area_summed / bc_size) %>%
-        arrange(max_rlevel)
-    } else {
-      dat = regDistSumms() %>%
-        rename(area_prop = prop_regdist_area)
-    }
-
-    p = dat %>%
-      mutate(max_restriction_value = replace(max_restriction_value,
-                                             max_restriction_value == "NA",
-                                             NA)) %>%
-      arrange(max_rlevel) %>%
-      mutate(max_restriction_value = fct_inorder(max_restriction_value)) %>%
-      # mutate(area_prop = 100*round(area_prop,4)) %>%
-      ggplot() +
-      geom_col(aes(x = max_restriction_value,
-                   y = area_prop,
-                   fill = max_restriction_value)) +
-      coord_flip() +
-      scale_x_discrete(labels = scales::label_wrap(width = 16)) +
-      scale_y_continuous(labels = scales::percent_format()) +
-      envreportutils::theme_soe() +
-      # theme_bw() +
-      theme(legend.position = 'none',
-            text = element_text(size = 16),
-            axis.title.y = element_markdown(),
-            axis.title.x = element_markdown())
-
-    if(input$spatial_scale_selector == "Provincial"){
-      p = p + labs(x = "",
-                   y = "Proportion of Province (m<sup>2</sup>)",
-                   fill = "")
-    } else {
-      p = p + labs(x = "",
-                   y = "Proportion of Regional District (m<sup>2</sup>)",
-                   fill = "")
-    }
-
-    if(input$industry_filter == "Forestry") p = p+scale_fill_brewer(palette = 'Greens', na.value = "grey")
-    if(input$industry_filter == "Mining") p = p+scale_fill_brewer(palette = 'Purples', na.value = "grey")
-    if(input$industry_filter == "Oil and Gas") p = p+scale_fill_brewer(palette = 'Oranges', na.value = "grey")
-
-    p
-  })
-
-  output$regdist_fig = renderUI({
-
-  })
-  output$test_text = renderText({
-    paste0("regdist_figs/",
-           regDistSumms()$industry_name_key,
-           "_",
-           regDistSumms()$ADMIN_AREA_NAME,
-           ".jpeg")
-  })
-
-  output$leaflet_map = renderLeaflet({
-
-    my_pal = leaflet::colorNumeric(palette = 'viridis',
-                                   domain = bc_regs$prop_regdist_area)
-    l = leaflet()
-
-    for(i in c(0:5)){
-
-      # my_popups = bcRegsLeafletDat() %>%
-      #   filter(max_rlevel == i) %>%
-      #   mutate(my_popup = paste0("<img src = './tmp/regdist_svgs/og_restriction_max_",ADMIN_AREA_NAME,".svg'{width='300'}>")) %>%
-      #   pull(my_popup)
-
-
-      l = l %>%
-        addPolygons(data = bcRegsLeafletDat() %>%
-                      filter(max_rlevel == i),
-                    color = 'black',
-                    weight = 3,
-                    highlightOptions = highlightOptions(color = '#FDE725FF',
-                                                        weight = 6),
-                    label = ~paste0(ADMIN_AREA_NAME,": ",100*round(prop_regdist_area,2),"%"),
-                    fillColor = ~my_pal(prop_regdist_area),
-                    fill = T,
-                    fillOpacity = 1,
-                    # popup = my_popups,
-                    # popupOptions = popupOptions(minWidth = 350),
-                    group = ~as.character(paste0("Max Restriction Level ",i)))
-    }
-
-    l %>%
-      addProviderTiles(provider = 'Stamen.TerrainBackground') %>%
+    leaflet(bc_regs) %>%
+      addTiles() %>%
+      addPolygons(
+        layerId = ~DISTRICT_NAME,
+        fillColor = ~"Green",
+        weight = 2,
+        opacity = 0.5,
+        color = 'black',
+        dashArray = '2',
+        fillOpacity = 0.25,
+        highlightOptions = highlightOptions(color = "red", weight = 3,
+                                            bringToFront = TRUE),
+        label = ~DISTRICT_NAME,
+        labelOptions = labelOptions(
+          style = list("font-weight" = "normal", padding = "4px 8px"),
+          textsize = "15px",
+          direction = 'auto')) %>%
       envreportutils::add_bc_home_button() %>%
-      envreportutils::set_bc_view() %>%
-      addLayersControl(baseGroups = paste0("Max Restriction Level ",c(0:5)),
-                       options = layersControlOptions(collapsed = F)) %>%
-      addLegend(position = 'bottomright',
-                pal = my_pal,
-                values = c(bc_regs$prop_regdist_area))
+      envreportutils::set_bc_view(zoom = 5)
+  })
+
+  # Set up a reactive value that stores a district's name upon user's click
+  click_regdist <- reactiveVal('Provincial')
+
+  # Watch for a click on the leaflet map. Once clicked...
+
+  # 1. Update Leaflet map.
+  observeEvent(input$sel_reg_map_shape_click, {
+    # Capture the info of the clicked polygon. We use this for filtering.
+    click_regdist(input$sel_reg_map_shape_click$id)
+    # Toggle the sidebar to be closed. Note: this skips the actual input$leaflet_sidebar variable.
+    addClass(selector = "body", class = "sidebar-collapse")
+    session$sendCustomMessage("leaflet_sidebar", 'FALSE')
+    manual_sidebar_tracker('closed')
+  })
+
+  # 2. (Create and) update table.
+  designations_for_table = reactive({
+    if(click_regdist() == "Provincial"){
+      #When the focus is provincial, only keep the 10 largest designations
+      # by industry type. This step already done for each district in analysis script.
+      area_per_des %>%
+        filter(`District Name` == "Provincial") %>%
+        ungroup() %>%
+        distinct() %>%
+        arrange(desc(`Area (km²)`)) %>%
+        dplyr::select(-`District Name`,-`Area (km²)`) %>%
+        slice(1:10)
+    } else if(click_regdist() != "Provincial"){
+      area_per_des %>%
+        filter(`District Name` %in% click_regdist()) %>%
+        ungroup() %>%
+        distinct() %>%
+        arrange(desc(`Area (km²)`)) %>%
+        dplyr::select(-`District Name`,-`Area (km²)`) %>%
+        slice(1:10)
+    }
+  })
+
+  output$desig_table <- renderDT(
+    designations_for_table()
+  )
+
+  # If user clicks on 'reset to province' button, reset the selection to 'Provincial'
+  observeEvent(input$reset_to_province, {
+    click_regdist('Provincial')
+  })
+
+  # Make a label out of the spatial focus (either provincial or some district's name)
+  output$region_selected_text = renderText({
+    spatial_focus = click_regdist()
+    #If the spatial focus is 'Provincial', change to 'Province'
+    if(spatial_focus == "Provincial")spatial_focus = 'British Columbia'
+    else spatial_focus
+  })
+
+  # A subset of the bc_regs object, just with selected district.
+  bc_reg_dat_selected = reactive({
+    # Use the leaflet map to respond to user clicking a region
+    # (or setting focus to whole provice) and then filter the data table.
+    bc_reg_dat %>%
+      filter(DISTRICT_NAME %in% click_regdist())
+  })
+
+  # A subset of the jpeg_filepaths_df dataframe, filtered for either provincial-scale
+  # figure, or for just the selected district (selected with leaflet map)
+
+  jpeg_filepaths_df_selected = reactive({
+    jpeg_filepaths_df %>%
+      filter(regdist %in% click_regdist())
+  })
+
+  output$jpeg_fig_forest = renderUI({
+    if(click_regdist() == "Provincial"){
+      tags$img(src = paste0('forest_',jpeg_filepaths_df_selected()$image_path),
+               width = my_box_content_width)
+    } else {
+      tags$img(src = paste0("regdist_figs/forest_",
+                            jpeg_filepaths_df_selected()$image_path),
+               width = my_box_content_width)
+    }
+  })
+
+  output$jpeg_fig_mine = renderUI({
+    if(click_regdist() == "Provincial"){
+      tags$img(src = paste0('mine_',jpeg_filepaths_df_selected()$image_path),
+               width = my_box_content_width)
+    } else {
+      tags$img(src = paste0("regdist_figs/mine_",
+                            jpeg_filepaths_df_selected()$image_path),
+               width = my_box_content_width)
+    }
+  })
+
+  output$jpeg_fig_og = renderUI({
+    if(click_regdist() == "Provincial"){
+      tags$img(src = paste0('og_',jpeg_filepaths_df_selected()$image_path),
+               width = my_box_content_width)
+    } else {
+      tags$img(src = paste0("regdist_figs/og_",
+                            jpeg_filepaths_df_selected()$image_path),
+               width = my_box_content_width)
+    }
+  })
+
+  output$barplot_forest = renderPlotly({
+
+    regdist_barplot(bc_reg_dat_selected(),
+                    industry = 'forest_restriction_max',
+                    reactive_height = my_row_height_minimized,
+                    number_ticks = numberTicks())
+  })
+
+  output$barplot_mine = renderPlotly({
+
+    regdist_barplot(bc_reg_dat_selected(),
+                    industry = 'mine_restriction_max',
+                    reactive_height = my_row_height_minimized,
+                    number_ticks = numberTicks())
+  })
+
+  output$barplot_og = renderPlotly({
+
+    regdist_barplot(bc_reg_dat_selected(),
+                    industry = 'og_restriction_max',
+                    reactive_height = my_row_height_minimized,
+                    number_ticks = numberTicks())
   })
 }
 
