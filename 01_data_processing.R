@@ -17,6 +17,7 @@ library(tidyr)
 library(ggplot2)
 library(purrr)
 library(sf)
+library(bcmaps)
 # library(RStoolbox)
 
 # Read in data from the python geoprocessing script.

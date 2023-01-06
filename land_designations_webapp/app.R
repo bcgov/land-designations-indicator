@@ -1,6 +1,6 @@
 library(crosstalk)
 library(shiny)
-library(tidyverse)
+library(tidyr)
 library(DT)
 library(sf)
 library(leaflet)

@@ -27,10 +27,8 @@ knitr::opts_chunk$set(echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE,
                       error=FALSE)
 
 library(ggplot2)
-library(ggpolypath)
 library(envreportutils) #theme_soe_facet
 library(magrittr) # %>%
-library(feather) #read in feather file
 library(ggthemes)
 library(knitr) #for knitting to PDF
 library(tidyr)
