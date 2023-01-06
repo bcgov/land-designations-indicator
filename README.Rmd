@@ -41,7 +41,8 @@ Other than `bcmaps` and `envreportutils`, all required packages are available fr
 - magick
 - magrittr
 
-Used exclusively in shiny app:
+Used exclusively in shiny app
+
 - crosstalk
 - shiny
 - DT

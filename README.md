@@ -3,10 +3,10 @@
 
 [![img](https://img.shields.io/badge/Lifecycle-Stable-97ca00)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
-# Analysis of land designations that contribute to conservation
+# Analysis of land designations for limited resource extraction
 
-This repository contains R code that calculates summaries of the amount
-of land designated in B.C. that contributes to conservation. It supports
+This repository contains R code that calculates summaries of the various
+land designations in B.C. that restrict resource extraction. It supports
 this [Environmental Reporting BC
 indicator](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html).
 
@@ -17,40 +17,50 @@ indicator](http://www.env.gov.bc.ca/soe/indicators/land/land-designations.html).
 Other than `bcmaps` and `envreportutils`, all required packages are
 available from CRAN
 
--   bcmaps (install with `devtools::install_github("bcgov/bcmaps")`)
--   envreportutils (install with
-    `devtools::install_github("bcgov/envreportutils")`)
--   geojsonio
--   rmapshaper
--   feather
--   readr
--   dplyr
--   tidyr
--   sf
--   ggplot2
--   ggpolypath
--   magrittr
--   ggthemes
--   svglite
+- bcmaps (install with `devtools::install_github("bcgov/bcmaps")`)
+- envreportutils (install with
+  `devtools::install_github("bcgov/envreportutils")`)
+- knitr
+- dplyr
+- tidyr
+- stringr
+- purrr
+- sf
+- patchwork
+- ggplot2
+- ggtext
+- RColorBrewer
+- ggthemes
+- magick
+- magrittr
+
+Used exclusively in shiny app
+
+- crosstalk
+- shiny
+- DT
+- leaflet
+- bs4Dash
+- fresh
+- plotly
+- shinyjs
+- scales
 
 ### Data
 
-The inputs required to run this analysis can be obtained by downloading
-the data via the [B.C. Data
+The input data required to run this analysis can be obtained by
+downloading the data via the [B.C. Data
 Catalogue](https://catalogue.data.gov.bc.ca/dataset/3eedf0da-0c1d-4917-aff5-1eb8f59736bc).
 They are released under the [Open Government Licence - British
 Columbia](http://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61):
 
--   `designatedlands.gpkg` - the land designations layer
--   `lands_bec.gpkg` - the land designations layer intersected with BEC.
--   `lands_eco.gpkg`- the land designations layer intersected with
-    ecosections.
+- `designatedlands.gpkg` - the land designations layer (consists of a
+  layer in which designations overlap and a layer in which the
+  designations have been planarized such that no overlap occurs)
+- `sources_designations.csv` - a table listing the official and short
+  names of land designations
 
-Place these in the `data` folder of this repository. You will also
-require `BEC_BIOGEOCLIMATIC_POLY.gdb` from
-[here](https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map)
-and `ERC_ECOSECTIONS_SP.gdb` from
-[here](https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia)
+Place this geopackage file in the `data` folder of this repository.
 
 The [`data-raw`](data-raw) folder contains a file
 [`sources.csv`](data-raw/sources.csv) that lists all of the source land
@@ -58,51 +68,17 @@ designation layers used in the analysis.
 
 ### Running the analysis
 
--   Run the `01_clean.R` file to prepare the data. Note that this will
-    take a long time (several hours)
--   Run the `02_analysis.R` file to calculate the summaries.
--   Summary csv files are copied to the `out` directory, and summary
-    tabular objects for use in the [land designations Shiny
-    app](https://github.com/bcgov/land-designations-shinyapp) are copied
-    to the `out-shiny` directory.
--   Run the `03_output_static.R` script to create outputs (png maps and
-    graphs etc).
--   Run the `04_output_shiny.R` scrip to generate the objects required
-    for the shiny app. This will also copy the files from `out-shiny` to
-    the `../land-designations-shinyapp/app/data` folder, assuming the
-    folder exists in same parent directory as this repository
-
-### Designated Lands Python script:
-
-Input data was created by running the python script
-[here](https://github.com/bcgov/designatedlands). Please note that the
-code there is still being developed to make it more efficient.
-
-It was run using the following commands:
-
-    ## Download the Biogeoclimatic Zone layer from here: 
-    ## https://catalogue.data.gov.bc.ca/dataset/biogeoclimatic-ecosystem-classification-bec-map
-    ## and store it in your working directory
-
-    ## Download the Ecosection layer from here: 
-    ## https://catalogue.data.gov.bc.ca/dataset/ecosections-ecoregion-ecosystem-classification-of-british-columbia
-    ## and store it in your working directory
-
-    python designatedlands.py create_db
-
-    python designatedlands.py load
-
-    python designatedlands.py process
-
-    python designatedlands.py dump --out_file=designatedlands.gpkg
-
-    python designatedlands.py overlay BEC_BIOGEOCLIMATIC_POLY.gdb --in_layer=WHSE_FOREST_VEGETATION_BEC_BIOGEOCLIMATIC_POLY_polygon --new_layer_name=bec
-
-    python designatedlands.py overlay ERC_ECOSECTIONS_SP.gdb --in_layer=WHSE_TERRESTRIAL_ECOLOGY_ERC_ECOSECTIONS_SP_polygon --new_layer_name=eco
-
-    python designatedlands.py dump --out_table=bec_overlay --out_file=lands_bec.gpkg --aggregate_fields="bc_boundary,designation,category,zone,subzone,variant,phase,map_label"
-
-    python designatedlands.py dump --out_table=eco_overlay --out_file=lands_eco.gpkg --aggregate_fields="bc_boundary,designation,category,parent_ecoregion_code,ecosection_code,ecosection_name"
+- Run the `01_data_processing` file to prepare the data. Note that this
+  will take a long time (\~ 30 minutes) and each line of code must be
+  run sequentially. Once the script is open in an R GUI (preferably
+  RStudio) and the required packages have been downloaded onto your
+  local machine, step through the script line by line. This can be done
+  by either pressing the ‘Run’ button at the top right of the script
+  window or by pressing the control (‘Ctrl’) key and then the Enter key
+  simultaneously.
+- Run the `02_output.R` file to generate the summary files and JPEG
+  images necessary to run either the Shiny app (script name: ‘app.R’) or
+  to produce the PDF report (script name: ‘land_designations.Rmd’)
 
 ## Getting Help or Reporting an Issue
 
