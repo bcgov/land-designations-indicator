@@ -1,3 +1,4 @@
+library(tidyverse)
 library(crosstalk)
 library(shiny)
 library(tidyr)
